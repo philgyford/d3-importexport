@@ -35,59 +35,100 @@ impexp.dataManager = function module() {
 };
 
 impexp.chart = function module() {
-  var width = 400,
-      height = 300;
+  var margin = {top: 20, right: 20, bottom: 30, left: 50},
+      width = 400,
+      height = 300,
+      xValue = function(d) { return d[0]; },
+      yValue = function(d) { return d[1]; },
+      xScale = d3.scale.ordinal(),
+      yScale = d3.scale.linear(),
+      xAxis = d3.svg.axis().scale(xScale).orient('bottom'),
+      yAxis = d3.svg.axis().scale(yScale).orient('left'),
+      line = d3.svg.line().x(X).y(Y);
+
   var dispatch = d3.dispatch('customHover');
 
   function exports(_selection) {
-    _selection.each(function(_data) {
-      var barW = width / _data.length,
-          scaling = height / d3.max(_data);
+    _selection.each(function(data) {
+      var inner_width = width - margin.left - margin.right,
+          inner_height = height - margin.top - margin.bottom;
 
+      // Update scales.
+      xScale.domain(data.map(function (d) { return d[0]; }))
+            .rangePoints([0, inner_width]);
+      yScale.domain([0, d3.max(data, function(d) { return d[1]; })])
+            .range([inner_height, 0]);
+
+      // Select svg element if it exists.
       var svg = d3.select(this)
                   .selectAll('svg')
-                  .data([_data]);
-      svg.enter().append('svg')
-         .classed('chart', true);
-      svg.transition().attr({width: width, height: height});
+                  .data([data]);
 
-      var bars = svg.selectAll('.bar')
-                    .data(function(d, i) {
-                      // d === _data
-                      return d;
-                    });
+      // Or create skeletal chart.
+      var gEnter = svg.enter().append('svg').append('g');
+      gEnter.append('path').attr('class', 'line');
+      gEnter.append('g').attr('class', 'x axis');
+      gEnter.append('g').attr('class', 'y axis');
 
-      bars.enter().append('rect')
-          .classed('bar', true)
-          .attr({
-            x: width,
-            width: barW,
-            y: function(d, i) { return height - d * scaling; },
-            height: function(d, i) { return d * scaling; }
-          })
-          .on('mouseover', dispatch.customHover);
+      // Update outer dimensions.
+      svg.transition()
+          .attr({ width: width, height: height });
 
-      bars.transition()
-          .attr({
-            x: function(d, i) { return i * barW; },
-            width: barW,
-            y: function(d, i) { return height - d * scaling; },
-            height: function(d, i) { return d * scaling; }
-          });
-      bars.exit().transition().style({opacity: 0}).remove();
+      // Update inner dimensions.
+      var g = svg.select('g')
+                .attr('transform',
+                  'translate(' + margin.left + ',' + margin.right + ')');
+
+      // Update line path.
+      g.select('.line').attr('d', line);
+
+      // Update axes.
+      g.select('.x.axis')
+        .attr('transform', 'translate(0,' + yScale.range()[0] + ')')
+        .call(xAxis);
+      g.select('.y.axis')
+        .call(yAxis);
     });
   };
 
-  exports.width = function(_x) {
-    if (!arguments.length) return w;
-    width = _x;
+  // The x-accessor for the path generator; xScale âˆ˜ xValue.
+  function X(d) {
+    return xScale(d[0]);
+  }
+
+  // The x-accessor for the path generator; yScale âˆ˜ yValue.
+  function Y(d) {
+    return yScale(d[1]);
+  }
+
+  exports.margin = function(_) {
+    if (!arguments.length) return margin;
+    margin = _;
     return this;
   };
 
-  exports.height = function(_x) {
-    if (!arguments.length) return h;
-    height = _x;
+  exports.width = function(_) {
+    if (!arguments.length) return width;
+    width = _;
     return this;
+  };
+
+  exports.height = function(_) {
+    if (!arguments.length) return height;
+    height = _;
+    return this;
+  };
+
+  exports.x = function(_) {
+    if (!arguments.length) return xValue;
+    xValue = _;
+    return chart;
+  };
+
+  exports.y = function(_) {
+    if (!arguments.length) return yValue;
+    yValue = _;
+    return chart;
   };
   
   d3.rebind(exports, dispatch, "on");
@@ -96,12 +137,11 @@ impexp.chart = function module() {
 };
 
 var chart = impexp.chart()
-                  .width(500).height(200)
-                  .on('customHover', function(d, i) {
-                    d3.select('#message').text(d); 
-                  });
+                  .width(600).height(400)
+                  .margin({top: 50, right: 50, bottom: 50, left: 50});
 
-var data = [1, 2, 3, 4];
+var data = [['a', 10], ['b', 20], ['c', 10], ['d', 20], ['e', 30]];
+
 var container = d3.select('#container')
-                  .datum(data)
+                  .data([data])
                   .call(chart);

@@ -1,13 +1,12 @@
-.axis path, .axis line {
+.axis path,
+.axis line {
   fill: none;
-  stroke: black;
+  stroke: #000;
   shape-rendering: crispEdges;
 }
-.bar {
-  fill: steelblue;
-  stroke: white;
-}
-.x.axis path {
-  display: none;
-}
 
+.line {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 1.5px;
+}
