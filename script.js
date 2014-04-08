@@ -12,7 +12,7 @@ impexp.dataManager = function module() {
     loadCsv.on('progress', function() {
                                     dispatch.dataLoading(d3.event.loaded); });
 
-    loadCsv.get(function(_error, _reponse) {
+    loadCsv.get(function(_error, _response) {
       // Apply the cleaning function supplied in the _cleaningFunc parameter.
       _response.forEach(function(d) {
         _cleaningFunc(d);
@@ -34,6 +34,126 @@ impexp.dataManager = function module() {
   return exports;
 };
 
+/**
+ * For combining our sets of import and export data into one data structure.
+ *  var combiner = impexp.dataCombiner();
+ *  var data = combiner.combine(imports_data, exports_data);
+ */
+impexp.dataCombiner = function module() {
+  var exports = {};
+
+  /**
+   * Both imports_data and exports_data are like:
+   * [
+   *  {1999: '15', 2000: '25', 2001: '30', 'Country': 'France'}
+   *  {1999: '16', 2000: '18', 2001: '22', 'Country': 'UK'}
+   * ]
+   * and it returns this:
+   * {
+   *  'France': [
+   *    {
+   *      year: 1999,
+   *      imports: 15,
+   *      exports: 33
+   *    }...
+   *  ],
+   *  'UK': [
+   *    ...
+   *  ]
+   * }
+   */
+  exports.combine = function(imports_data, exports_data) {
+
+    // The basis for what we'll return:
+    combined_data = keyByCountryWithArrays('imports', imports_data);
+    // So we can access its data more easily:
+    exports_by_country = keyByCountry(exports_data);
+
+    // Add the export data to the transformed import data:
+    d3.keys(combined_data).forEach(function(country) {
+      if (country in exports_by_country) {
+        combined_data[country].forEach(function(year_data, n) {
+          var year = year_data['year'];
+          if (year in exports_by_country[country]) {
+            combined_data[country][n]['exports'] = exports_by_country[country][year];
+          };
+        });
+      };
+    });
+    return combined_data;
+  };
+
+  /**
+   * `kind` is one of 'imports' or 'exports'.
+   * `rows` is an array or objects.
+   *
+   * Changes from:
+   * [
+   *  {1999: '15', 2000: '25', 2001: '30', 'Country': 'France'}
+   *  {1999: '16', 2000: '18', 2001: '22', 'Country': 'UK'}
+   * ]
+   *
+   * to (if `kind` is 'imports'):
+   * {
+   *  'France': [
+   *    {'year': 1999, 'imports': 15},
+   *    {'year': 2000, 'imports': 25}, ...
+   *  ],
+   *  'UK': [ ...
+   * }
+   */
+  keyByCountryWithArrays = function(kind, rows) {
+    var countries = {};
+    rows.forEach(function(row) {
+      var years = [];
+      // k will be either a year or 'Country':
+      d3.keys(row).forEach(function(k) {
+        if (k !== 'Country') {
+          var year = {year: +k};
+          year[kind] = +row[k];
+          // year will be like {'year': 1999, 'imports': 15}
+          years.push(year);
+        };
+      });
+      countries[row['Country']] = years;
+    });
+    return countries;
+  };
+
+  /**
+   * Takes this:
+   * [
+   *  {1999: '15', 2000: '25', 2001: '30', 'Country': 'France'}
+   *  {1999: '16', 2000: '18', 2001: '22', 'Country': 'UK'}
+   * ]
+   * and returns this:
+   * { 
+   *  'France': {1999: 15, 2000: 25, 2001: 30},
+   *  'UK':     {1999: 16, 2000: 18, 2001: 22}
+   * }
+   */
+  keyByCountry = function(rows) {
+    var countries = {};
+    rows.forEach(function(row) {
+      // Get the country name and remove from the row's data.
+      var country = row['Country'];
+      delete row['Country'];
+
+      // Make sure all years and values are numeric:
+      var year_data = {};
+      d3.keys(row).forEach(function(k) {
+        var year = +k;
+        year_data[year] = +row[k];
+      });
+
+      countries[country] = year_data;
+    })
+    return countries;
+  };
+
+  return exports;
+};
+
 impexp.chart = function module() {
   var margin = {top: 20, right: 20, bottom: 30, left: 50},
       width = 400,
@@ -45,6 +165,7 @@ impexp.chart = function module() {
       xAxis = d3.svg.axis().scale(xScale).orient('bottom'),
       yAxis = d3.svg.axis().scale(yScale).orient('left'),
       line = d3.svg.line().x(X).y(Y);
+      //area = d3.svg.area().x(X).y1(Y);
 
   var dispatch = d3.dispatch('customHover');
 
@@ -52,6 +173,11 @@ impexp.chart = function module() {
     _selection.each(function(data) {
       var inner_width = width - margin.left - margin.right,
           inner_height = height - margin.top - margin.bottom;
+
+      //data.forEach(function(d) {
+        //d['imports'] = +d[1];
+        //d['exports'] = +d[2];
+      //});
 
       // Update scales.
       xScale.domain(data.map(function (d) { return d[0]; }))
@@ -66,6 +192,18 @@ impexp.chart = function module() {
 
       // Or create skeletal chart.
       var gEnter = svg.enter().append('svg').append('g');
+
+      //gEnter.append('clipPath').attr('id', 'clip-below').
+            //.append('path').attr('d', area.y0(height));
+
+      //gEnter.append('clipPath').attr('id', 'clip-above').
+            //.append('path').attr('d', area.y0(0));
+
+      //gEnter.append('path')
+              //.attr('class', 'area above')
+              //.attr('clip-path', 'url(#clip-above)')
+              //.attr('d', area.y0())
+
       gEnter.append('path').attr('class', 'line');
       gEnter.append('g').attr('class', 'x axis');
       gEnter.append('g').attr('class', 'y axis');
@@ -136,12 +274,46 @@ impexp.chart = function module() {
   return exports;
 };
 
-var chart = impexp.chart()
-                  .width(600).height(400)
-                  .margin({top: 50, right: 50, bottom: 50, left: 50});
+var draw_chart = function() {
+  d3.select('#wait').style('visibility', 'hidden');
+  d3.select('#ready').style('visibility', 'visible');
 
-var data = [['a', 10], ['b', 20], ['c', 10], ['d', 20], ['e', 30]];
+  var combiner = impexp.dataCombiner();
+  var data = combiner.combine(importsDataManager.getCleanedData(),
+                              exportsDataManager.getCleanedData());
 
-var container = d3.select('#container')
-                  .data([data])
-                  .call(chart);
+  console.log(data);
+  var chart = impexp.chart()
+                    .width(600).height(400)
+                    .margin({top: 50, right: 50, bottom: 50, left: 50});
+
+  var container = d3.select('#container')
+                    .data([data['France']])
+                    .call(chart);
+};
+
+var importsDataManager = impexp.dataManager(),
+    exportsDataManager = impexp.dataManager();
+
+// We don't really use this cleaning function.
+var csvCleaner = function(d){};
+importsDataManager.loadCsvData('imports.csv', csvCleaner);
+exportsDataManager.loadCsvData('exports.csv', csvCleaner);
+
+
+var loaded = 0;
+
+importsDataManager.on('dataReady', function() {
+  loaded++;
+  if (loaded == 2) {
+    draw_chart();
+  };
+});
+
+exportsDataManager.on('dataReady', function() {
+  loaded++;
+  if (loaded == 2) {
+    draw_chart();
+  };
+});
+
