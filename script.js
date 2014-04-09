@@ -167,8 +167,8 @@ impexp.chart = function module() {
                   .tickFormat(d3.time.format('%Y'))
                   .ticks(d3.time.years, 1),
       yAxis = d3.svg.axis().scale(yScale).orient('left'),
-      line = d3.svg.area().x(X).y(Y);
-      //area = d3.svg.area().x(X).y1(Y);
+      line = d3.svg.area().x(X).y(Y),
+      area = d3.svg.area().x(X).y1(Y);
 
   var dispatch = d3.dispatch('customHover');
 
@@ -192,8 +192,26 @@ impexp.chart = function module() {
                   .selectAll('svg')
                   .data([data]);
 
-      // Or create skeletal chart.
+      // Or create skeletal chart, with no data applied.
       var gEnter = svg.enter().append('svg').append('g');
+
+      gEnter.append('clipPath')
+              .attr('id', 'clip-below')
+            .append('path')
+              .attr('class', 'clip below');
+
+      gEnter.append('clipPath')
+              .attr('id', 'clip-above')
+            .append('path')
+              .attr('class', 'clip above');
+
+      gEnter.append('path')
+              .attr('class', 'area above')
+              .attr('clip-path', 'url("#clip-above")');
+
+      gEnter.append('path')
+              .attr('class', 'area below')
+              .attr('clip-path', 'url("#clip-below")');
 
       gEnter.append('path').attr('class', 'line');
       gEnter.append('g').attr('class', 'x axis');
@@ -202,13 +220,17 @@ impexp.chart = function module() {
       // Update outer dimensions.
       svg.transition()
           .attr({ width: width, height: height });
-
       // Update inner dimensions.
       var g = svg.select('g')
                 .attr('transform',
                   'translate(' + margin.left + ',' + margin.right + ')');
 
-      // Update line path.
+      // Update lines/areas.
+      g.select('.clip.below').attr('d', area.y0(inner_height));
+      g.select('.clip.above').attr('d', area.y0(0));
+      g.select('.area.above')
+          .attr('d', area.y0(function(d) { return yScale(d['exports']); }));
+      g.select('.area.below').attr('d', area);
       g.select('.line').attr('d', line);
 
       // Update axes.
