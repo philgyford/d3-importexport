@@ -183,7 +183,7 @@ impexp.chart = function module() {
             .range([0, inner_width]);
 
       yScale.domain([
-        d3.min(data, function(d) { return Math.min(d['imports'], d['exports']); }),
+        0,
         d3.max(data, function(d) { return Math.max(d['imports'], d['exports']); })
       ]).range([inner_height, 0]);
 
