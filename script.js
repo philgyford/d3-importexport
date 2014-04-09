@@ -176,6 +176,8 @@ impexp.chart = function module() {
   function exports(_selection) {
     _selection.each(function(data) {
 
+      data = data['Australia'];
+
       var inner_width = width - margin.left - margin.right,
           inner_height = height - margin.top - margin.bottom;
 
@@ -293,45 +295,69 @@ impexp.chart = function module() {
   return exports;
 };
 
-var draw_chart = function() {
-  d3.select('#wait').style('visibility', 'hidden');
-  d3.select('#ready').style('visibility', 'visible');
 
-  var combiner = impexp.dataCombiner();
-  var data = combiner.combine(importsDataManager.getCleanedData(),
-                              exportsDataManager.getCleanedData());
+impexp.controller = function module() {
+  var exports = {},
+      importsDataManager = impexp.dataManager(),
+      exportsDataManager = impexp.dataManager();
 
-  var chart = impexp.chart()
-                    .width(800).height(400)
-                    .margin({top: 50, right: 50, bottom: 50, left: 50});
+  /**
+   * Call this to start everything going.
+   */
+  exports.init = function() {
+    // Could be used to clean the data, but we don't need to.
+    var csvCleaner = function(d){};
 
-  var container = d3.select('#container')
-                    .data([data['France']])
-                    .call(chart);
-};
+    // Load both files.
+    // After this you could do importsDataManager.getCleanedData() to see
+    // what was loaded.
+    importsDataManager.loadCsvData('imports.csv', csvCleaner);
+    exportsDataManager.loadCsvData('exports.csv', csvCleaner);
 
-var importsDataManager = impexp.dataManager(),
-    exportsDataManager = impexp.dataManager();
+    // Once the data has loaded, each manager will send 'dataReady' events.
+    // So, once both have happened, we want to draw the chart:
 
-// We don't really use this cleaning function.
-var csvCleaner = function(d){};
-importsDataManager.loadCsvData('imports.csv', csvCleaner);
-exportsDataManager.loadCsvData('exports.csv', csvCleaner);
+    var loaded = 0;
 
+    importsDataManager.on('dataReady', function() {
+      loaded++;
+      if (loaded == 2) {
+        draw_chart();
+      };
+    });
 
-var loaded = 0;
-
-importsDataManager.on('dataReady', function() {
-  loaded++;
-  if (loaded == 2) {
-    draw_chart();
+    exportsDataManager.on('dataReady', function() {
+      loaded++;
+      if (loaded == 2) {
+        draw_chart();
+      };
+    });
   };
-});
 
-exportsDataManager.on('dataReady', function() {
-  loaded++;
-  if (loaded == 2) {
-    draw_chart();
+  /**
+   * Called once all the CSV data has been loaded.
+   */
+  var draw_chart = function() {
+    d3.select('#wait').style('visibility', 'hidden');
+    d3.select('#ready').style('visibility', 'visible');
+
+    var combiner = impexp.dataCombiner();
+    var data = combiner.combine(importsDataManager.getCleanedData(),
+                                exportsDataManager.getCleanedData());
+
+    var chart = impexp.chart()
+                      .width(800).height(400)
+                      .margin({top: 50, right: 50, bottom: 50, left: 50});
+
+    var container = d3.select('#container')
+                      .data([data])
+                      .call(chart);
   };
-});
+
+  return exports;
+}
+
+// Let's go!
+var controller = impexp.controller();
+controller.init();
 
