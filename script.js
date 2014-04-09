@@ -109,10 +109,10 @@ impexp.dataCombiner = function module() {
       // k will be either a year or 'Country':
       d3.keys(row).forEach(function(k) {
         if (k !== 'Country') {
-          var year = {year: +k};
-          year[kind] = +row[k];
-          // year will be like {'year': 1999, 'imports': 15}
-          years.push(year);
+          var year_data = {year: new Date(+k, 0, 1)};
+          year_data[kind] = +row[k];
+          // year_data will be like {'year': DateObj, 'imports': 15}
+          years.push(year_data);
         };
       });
       countries[row['Country']] = years;
@@ -142,7 +142,8 @@ impexp.dataCombiner = function module() {
       // Make sure all years and values are numeric:
       var year_data = {};
       d3.keys(row).forEach(function(k) {
-        var year = +k;
+        // Make a Date object for 1st Jan for the corresponding year.
+        var year = new Date(+k, 0, 1);
         year_data[year] = +row[k];
       });
 
@@ -160,30 +161,31 @@ impexp.chart = function module() {
       height = 300,
       xValue = function(d) { return d[0]; },
       yValue = function(d) { return d[1]; },
-      xScale = d3.scale.ordinal(),
+      xScale = d3.time.scale(),
       yScale = d3.scale.linear(),
-      xAxis = d3.svg.axis().scale(xScale).orient('bottom'),
+      xAxis = d3.svg.axis().scale(xScale).orient('bottom')
+                  .tickFormat(d3.time.format('%Y'))
+                  .ticks(d3.time.years, 1),
       yAxis = d3.svg.axis().scale(yScale).orient('left'),
-      line = d3.svg.line().x(X).y(Y);
+      line = d3.svg.area().x(X).y(Y);
       //area = d3.svg.area().x(X).y1(Y);
 
   var dispatch = d3.dispatch('customHover');
 
   function exports(_selection) {
     _selection.each(function(data) {
+
       var inner_width = width - margin.left - margin.right,
           inner_height = height - margin.top - margin.bottom;
 
-      //data.forEach(function(d) {
-        //d['imports'] = +d[1];
-        //d['exports'] = +d[2];
-      //});
-
       // Update scales.
-      xScale.domain(data.map(function (d) { return d[0]; }))
-            .rangePoints([0, inner_width]);
-      yScale.domain([0, d3.max(data, function(d) { return d[1]; })])
-            .range([inner_height, 0]);
+      xScale.domain(d3.extent(data, function(d) { return d.year; }))
+            .range([0, inner_width]);
+
+      yScale.domain([
+        d3.min(data, function(d) { return Math.min(d['imports'], d['exports']); }),
+        d3.max(data, function(d) { return Math.max(d['imports'], d['exports']); })
+      ]).range([inner_height, 0]);
 
       // Select svg element if it exists.
       var svg = d3.select(this)
@@ -192,17 +194,6 @@ impexp.chart = function module() {
 
       // Or create skeletal chart.
       var gEnter = svg.enter().append('svg').append('g');
-
-      //gEnter.append('clipPath').attr('id', 'clip-below').
-            //.append('path').attr('d', area.y0(height));
-
-      //gEnter.append('clipPath').attr('id', 'clip-above').
-            //.append('path').attr('d', area.y0(0));
-
-      //gEnter.append('path')
-              //.attr('class', 'area above')
-              //.attr('clip-path', 'url(#clip-above)')
-              //.attr('d', area.y0())
 
       gEnter.append('path').attr('class', 'line');
       gEnter.append('g').attr('class', 'x axis');
@@ -231,12 +222,12 @@ impexp.chart = function module() {
 
   // The x-accessor for the path generator; xScale âˆ˜ xValue.
   function X(d) {
-    return xScale(d[0]);
+    return xScale(d.year);
   }
 
   // The x-accessor for the path generator; yScale âˆ˜ yValue.
   function Y(d) {
-    return yScale(d[1]);
+    return yScale(d.imports);
   }
 
   exports.margin = function(_) {
@@ -282,9 +273,8 @@ var draw_chart = function() {
   var data = combiner.combine(importsDataManager.getCleanedData(),
                               exportsDataManager.getCleanedData());
 
-  console.log(data);
   var chart = impexp.chart()
-                    .width(600).height(400)
+                    .width(800).height(400)
                     .margin({top: 50, right: 50, bottom: 50, left: 50});
 
   var container = d3.select('#container')
