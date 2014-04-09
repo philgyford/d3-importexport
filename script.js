@@ -167,8 +167,9 @@ impexp.chart = function module() {
                   .tickFormat(d3.time.format('%Y'))
                   .ticks(d3.time.years, 1),
       yAxis = d3.svg.axis().scale(yScale).orient('left'),
-      line = d3.svg.area().x(X).y(Y),
-      area = d3.svg.area().x(X).y1(Y);
+      imports_line = d3.svg.area().x(X).y(YImports),
+      exports_line = d3.svg.area().x(X).y(YExports),
+      area = d3.svg.area().x(X).y1(YImports);
 
   var dispatch = d3.dispatch('customHover');
 
@@ -213,7 +214,8 @@ impexp.chart = function module() {
               .attr('class', 'area below')
               .attr('clip-path', 'url("#clip-below")');
 
-      gEnter.append('path').attr('class', 'line');
+      gEnter.append('path').attr('class', 'line imports');
+      gEnter.append('path').attr('class', 'line exports');
       gEnter.append('g').attr('class', 'x axis');
       gEnter.append('g').attr('class', 'y axis');
 
@@ -231,7 +233,8 @@ impexp.chart = function module() {
       g.select('.area.above')
           .attr('d', area.y0(function(d) { return yScale(d['exports']); }));
       g.select('.area.below').attr('d', area);
-      g.select('.line').attr('d', line);
+      g.select('.line.imports').attr('d', imports_line);
+      g.select('.line.exports').attr('d', exports_line);
 
       // Update axes.
       g.select('.x.axis')
@@ -248,8 +251,11 @@ impexp.chart = function module() {
   }
 
   // The x-accessor for the path generator; yScale âˆ˜ yValue.
-  function Y(d) {
+  function YImports(d) {
     return yScale(d.imports);
+  }
+  function YExports(d) {
+    return yScale(d.exports);
   }
 
   exports.margin = function(_) {
