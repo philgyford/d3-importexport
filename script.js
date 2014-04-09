@@ -308,6 +308,8 @@ impexp.controller = function module() {
     // Could be used to clean the data, but we don't need to.
     var csvCleaner = function(d){};
 
+    init_form();
+
     // Load both files.
     // After this you could do importsDataManager.getCleanedData() to see
     // what was loaded.
@@ -333,6 +335,36 @@ impexp.controller = function module() {
       };
     });
   };
+
+  var init_form = function() {
+    // All to avoid loading jQuery which would let us just use $(el).on():
+    function addEventListener(el, eventName, handler) {
+      if (el.addEventListener) {
+        el.addEventListener(eventName, handler);
+      } else {
+        el.attachEvent('on' + eventName, function(){
+          handler.call(el);
+        });
+      }
+    }
+    addEventListener(document.getElementById('countries'), 'change',
+                                                    on_country_select_change);
+  };
+
+  var on_country_select_change = function(ev) {
+    var select = ev.srcElement;
+    change_country(select.options[select.selectedIndex].value);
+  };
+
+  /**
+   * `country` is the name of the country, eg 'United States'.
+   * Should match a key in the combined data structure.
+   */
+  var change_country = function(country) {
+    console.log(country);
+  };
+
+
 
   /**
    * Called once all the CSV data has been loaded.
