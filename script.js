@@ -340,8 +340,7 @@ impexp.controller = function module() {
    * Called once all the CSV data has been loaded.
    */
   var draw_chart = function() {
-    d3.select('#wait').style('visibility', 'hidden');
-    d3.select('#ready').style('visibility', 'visible');
+    $('#wait').hide();
 
     var combiner = impexp.dataCombiner();
     data = combiner.combine(importsDataManager.getCleanedData(),
