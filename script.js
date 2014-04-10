@@ -176,8 +176,6 @@ impexp.chart = function module() {
   function exports(_selection) {
     _selection.each(function(data) {
 
-      data = data['Australia'];
-
       var inner_width = width - margin.left - margin.right,
           inner_height = height - margin.top - margin.bottom;
 
@@ -298,6 +296,8 @@ impexp.chart = function module() {
 
 impexp.controller = function module() {
   var exports = {},
+      chart,
+      data,
       importsDataManager = impexp.dataManager(),
       exportsDataManager = impexp.dataManager();
 
@@ -361,10 +361,8 @@ impexp.controller = function module() {
    * Should match a key in the combined data structure.
    */
   var change_country = function(country) {
-    console.log(country);
+    update_chart(data[country]);
   };
-
-
 
   /**
    * Called once all the CSV data has been loaded.
@@ -374,15 +372,19 @@ impexp.controller = function module() {
     d3.select('#ready').style('visibility', 'visible');
 
     var combiner = impexp.dataCombiner();
-    var data = combiner.combine(importsDataManager.getCleanedData(),
-                                exportsDataManager.getCleanedData());
+    data = combiner.combine(importsDataManager.getCleanedData(),
+                            exportsDataManager.getCleanedData());
 
-    var chart = impexp.chart()
-                      .width(800).height(400)
-                      .margin({top: 50, right: 50, bottom: 50, left: 50});
+    chart = impexp.chart()
+                  .width(800).height(400)
+                  .margin({top: 50, right: 50, bottom: 50, left: 50});
 
+    update_chart(data['United Kingdom']);
+  };
+
+  var update_chart = function(country_data) {
     var container = d3.select('#container')
-                      .data([data])
+                      .datum(country_data)
                       .call(chart);
   };
 
