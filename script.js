@@ -161,6 +161,8 @@ impexp.chart = function module() {
   var margin = {top: 20, right: 20, bottom: 30, left: 50},
       width = 400,
       height = 300,
+      inner_width = width - margin.left - margin.right,
+      inner_height = height - margin.top - margin.bottom,
       xValue = function(d) { return d[0]; },
       yValue = function(d) { return d[1]; },
       xScale = d3.time.scale(),
@@ -184,8 +186,8 @@ impexp.chart = function module() {
   function exports(_selection) {
     _selection.each(function(data) {
 
-      var inner_width = width - margin.left - margin.right,
-          inner_height = height - margin.top - margin.bottom;
+      inner_width = width - margin.left - margin.right;
+      inner_height = height - margin.top - margin.bottom;
 
       // Update scales.
       xScale.domain(d3.extent(data, function(d) { return d.year; }))
