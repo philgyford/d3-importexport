@@ -298,6 +298,7 @@ impexp.controller = function module() {
   var exports = {},
       chart,
       data,
+      container,
       importsDataManager = impexp.dataManager(),
       exportsDataManager = impexp.dataManager();
 
@@ -336,6 +337,26 @@ impexp.controller = function module() {
     });
   };
 
+  /**
+   * Called once all the CSV data has been loaded.
+   */
+  var draw_chart = function() {
+    d3.select('#wait').style('visibility', 'hidden');
+    d3.select('#ready').style('visibility', 'visible');
+
+    var combiner = impexp.dataCombiner();
+    data = combiner.combine(importsDataManager.getCleanedData(),
+                            exportsDataManager.getCleanedData());
+
+    chart = impexp.chart()
+                  .width(800).height(400)
+                  .margin({top: 50, right: 50, bottom: 50, left: 50});
+
+    container = d3.select('#container')
+                  .datum(data['United Kingdom'])
+                  .call(chart);
+  };
+
   var init_form = function() {
     // All to avoid loading jQuery which would let us just use $(el).on():
     function addEventListener(el, eventName, handler) {
@@ -364,28 +385,11 @@ impexp.controller = function module() {
     update_chart(data[country]);
   };
 
-  /**
-   * Called once all the CSV data has been loaded.
-   */
-  var draw_chart = function() {
-    d3.select('#wait').style('visibility', 'hidden');
-    d3.select('#ready').style('visibility', 'visible');
-
-    var combiner = impexp.dataCombiner();
-    data = combiner.combine(importsDataManager.getCleanedData(),
-                            exportsDataManager.getCleanedData());
-
-    chart = impexp.chart()
-                  .width(800).height(400)
-                  .margin({top: 50, right: 50, bottom: 50, left: 50});
-
-    update_chart(data['United Kingdom']);
-  };
-
   var update_chart = function(country_data) {
-    var container = d3.select('#container')
-                      .datum(country_data)
-                      .call(chart);
+    container.datum(country_data)
+              .transition()
+              .ease('linear')
+              .call(chart);
   };
 
   return exports;
