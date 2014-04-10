@@ -110,7 +110,8 @@ impexp.dataCombiner = function module() {
       d3.keys(row).forEach(function(k) {
         if (k !== 'Country') {
           var year_data = {year: new Date(+k, 0, 1)};
-          year_data[kind] = +row[k];
+          // Make missing data null, ensure everything else is a number.
+          year_data[kind] = row[k] === '' ? null : +row[k];
           // year_data will be like {'year': DateObj, 'imports': 15}
           years.push(year_data);
         };
@@ -144,7 +145,8 @@ impexp.dataCombiner = function module() {
       d3.keys(row).forEach(function(k) {
         // Make a Date object for 1st Jan for the corresponding year.
         var year = new Date(+k, 0, 1);
-        year_data[year] = +row[k];
+        // Make missing data null, ensure everything else is a number.
+        year_data[year] = row[k] === '' ? null : +row[k];
       });
 
       countries[country] = year_data;
@@ -167,9 +169,15 @@ impexp.chart = function module() {
                   .tickFormat(d3.time.format('%Y'))
                   .ticks(d3.time.years, 1),
       yAxis = d3.svg.axis().scale(yScale).orient('left'),
-      imports_line = d3.svg.area().x(X).y(YImports),
-      exports_line = d3.svg.area().x(X).y(YExports),
-      area = d3.svg.area().x(X).y1(YImports);
+      // defined() ensures we only draw the lines where there is data.
+      imports_line = d3.svg.line().x(X).y(YImports)
+                        .defined(function(d){ return d.imports !== null; }),
+      exports_line = d3.svg.line().x(X).y(YExports)
+                        .defined(function(d){ return d.exports !== null; }),
+      // defined() ensures we draw the area only when both lines have data.
+      area = d3.svg.area().x(X).y1(YImports)
+                        .defined(function(d){
+                          return d.imports !== null && d.exports !== null; });
 
   var dispatch = d3.dispatch('customHover');
 
