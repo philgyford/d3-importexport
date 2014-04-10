@@ -299,6 +299,7 @@ impexp.controller = function module() {
       chart,
       data,
       container,
+      default_country = 'United Kingdom',
       importsDataManager = impexp.dataManager(),
       exportsDataManager = impexp.dataManager();
 
@@ -308,8 +309,6 @@ impexp.controller = function module() {
   exports.init = function() {
     // Could be used to clean the data, but we don't need to.
     var csvCleaner = function(d){};
-
-    init_form();
 
     // Load both files.
     // After this you could do importsDataManager.getCleanedData() to see
@@ -348,33 +347,33 @@ impexp.controller = function module() {
     data = combiner.combine(importsDataManager.getCleanedData(),
                             exportsDataManager.getCleanedData());
 
+    init_form();
+
     chart = impexp.chart()
                   .width(800).height(400)
                   .margin({top: 50, right: 50, bottom: 50, left: 50});
 
     container = d3.select('#container')
-                  .datum(data['United Kingdom'])
+                  .datum(data[default_country])
                   .call(chart);
   };
 
   var init_form = function() {
-    // All to avoid loading jQuery which would let us just use $(el).on():
-    function addEventListener(el, eventName, handler) {
-      if (el.addEventListener) {
-        el.addEventListener(eventName, handler);
-      } else {
-        el.attachEvent('on' + eventName, function(){
-          handler.call(el);
-        });
-      }
-    }
-    addEventListener(document.getElementById('countries'), 'change',
-                                                    on_country_select_change);
+    // Add all the countries we have data for to the select field.
+    d3.keys(data).forEach(function(country) {
+      var option = $('<option/>').attr('value', country).text(country);
+      if (country == default_country) {
+        option.attr('selected', 'selected');
+      };
+      $('#countries').append(option);
+    });
+
+    // When a new country is selected, change the chart.
+    $('#countries').on('change', on_country_select_change);
   };
 
   var on_country_select_change = function(ev) {
-    var select = ev.srcElement;
-    change_country(select.options[select.selectedIndex].value);
+    change_country(ev.target.selectedOptions[0].value);
   };
 
   /**
