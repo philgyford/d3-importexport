@@ -205,22 +205,22 @@ impexp.chart = function module() {
       var gEnter = svg.enter().append('svg').append('g');
 
       gEnter.append('clipPath')
-              .attr('id', 'clip-below')
+              .attr('id', 'clip-surplus')
             .append('path')
-              .attr('class', 'clip below');
+              .attr('class', 'clip surplus');
 
       gEnter.append('clipPath')
-              .attr('id', 'clip-above')
+              .attr('id', 'clip-deficit')
             .append('path')
-              .attr('class', 'clip above');
+              .attr('class', 'clip deficit');
 
       gEnter.append('path')
-              .attr('class', 'area above')
-              .attr('clip-path', 'url("#clip-above")');
+              .attr('class', 'area surplus')
+              .attr('clip-path', 'url("#clip-surplus")');
 
       gEnter.append('path')
-              .attr('class', 'area below')
-              .attr('clip-path', 'url("#clip-below")');
+              .attr('class', 'area deficit')
+              .attr('clip-path', 'url("#clip-deficit")');
 
       gEnter.append('path').attr('class', 'line imports');
       gEnter.append('path').attr('class', 'line exports');
@@ -236,11 +236,11 @@ impexp.chart = function module() {
                   'translate(' + margin.left + ',' + margin.right + ')');
 
       // Update lines/areas.
-      g.select('.clip.below').attr('d', area.y0(inner_height));
-      g.select('.clip.above').attr('d', area.y0(0));
-      g.select('.area.above')
-          .attr('d', area.y0(function(d) { return yScale(d['exports']); }));
-      g.select('.area.below').attr('d', area);
+      g.select('.clip.surplus').attr('d', area.y0(0));
+      g.select('.clip.deficit').attr('d', area.y0(inner_height));
+      g.select('.area.surplus').attr('d', area.y0(
+                                function(d) { return yScale(d['exports']); }));
+      g.select('.area.deficit').attr('d', area);
       g.select('.line.imports').attr('d', imports_line);
       g.select('.line.exports').attr('d', exports_line);
 

@@ -6,12 +6,12 @@
   shape-rendering: crispEdges;
 }
 
-.area.above {
-  fill: #fcc;
+.area.surplus {
+  fill: #cfc;
 }
 
-.area.below {
-  fill: #cfc;
+.area.deficit {
+  fill: #fcc;
 }
 
 .line {
@@ -19,9 +19,9 @@
   stroke-width: 1.5px;
 }
 .line.imports {
-  stroke: #090;
+  stroke: #900;
 }
 .line.exports {
-  stroke: #900;
+  stroke: #090;
 }
 
