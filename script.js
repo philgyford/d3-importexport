@@ -167,7 +167,7 @@ impexp.chart = function module() {
       yScale = d3.scale.linear(),
       xAxis = d3.svg.axis().scale(xScale).orient('bottom')
                   .tickFormat(d3.time.format('%Y'))
-                  .ticks(d3.time.years, 1),
+                  .ticks(d3.time.years, 5),
       yAxis = d3.svg.axis().scale(yScale).orient('left'),
       // defined() ensures we only draw the lines where there is data.
       imports_line = d3.svg.line().x(X).y(YImports)
