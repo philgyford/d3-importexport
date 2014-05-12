@@ -231,44 +231,29 @@ impexp.chart = function module() {
       svg.transition().attr({ width: width, height: height });
       g.attr('transform', 'translate(' + margin.left +','+ margin.right + ')');
 
-
-          
       // Create lines group and assign the data for each country to each group.
       var lines = g.selectAll("g.lines").data(function(d) { return d; });
       lines.enter().append("g").attr("class", "lines");
 
-      //g.select('.clip.surplus').attr('d', area.y0(0));
-      //g.append('clipPath')
-              //.attr('id', 'clip-surplus')
-            //.append('path')
-              //.attr('class', 'clip surplus');
-
-      //g.select('.area.surplus').attr('d', area.y0(
-                                //function(d) { return yScale(d['exports']); }));
-      //g.append('path')
-              //.attr('class', 'area surplus')
-              //.attr('clip-path', 'url("#clip-surplus")');
-
-      //g.select('.clip.deficit').attr('d', area.y0(inner_height));
-      //g.append('clipPath')
-              //.attr('id', 'clip-deficit')
-            //.append('path')
-              //.attr('class', 'clip deficit');
-
-      //g.select('.area.deficit').attr('d', area);
-      //g.append('path')
-              //.attr('class', 'area deficit')
-              //.attr('clip-path', 'url("#clip-deficit")');
-      
       // Create each of the two lines within each lines group,
       // and assign the values from that country to that line.
+
       lines.selectAll("path.line.imports")
           .data(function(d) { return [d.values]; })
-          .enter().append("path").attr('class', 'line imports')
+          .enter().append("path").attr('class', 'line imports');
+
+      lines.selectAll('path.line.imports')
+          .data(function(d) { return [d.values]; })
+          .transition()
           .attr("d", function(d) { return imports_line(d); });
+
       lines.selectAll("path.line.exports")
           .data(function(d) { return [d.values]; })
-          .enter().append("path").attr('class', 'line exports')
+          .enter().append("path").attr('class', 'line exports');
+
+      lines.selectAll('path.line.exports')
+          .data(function(d) { return [d.values]; })
+          .transition()
           .attr("d", function(d) { return exports_line(d); });
 
       // Make clipPaths for the shaded areas.
@@ -363,7 +348,8 @@ impexp.controller = function module() {
       chart,
       data,
       container,
-      default_country = 'United Kingdom',
+      default_country_1 = 'United Kingdom',
+      default_country_2 = 'United States',
       importsDataManager = impexp.dataManager(),
       exportsDataManager = impexp.dataManager();
 
@@ -416,48 +402,71 @@ impexp.controller = function module() {
                   .width(800).height(400)
                   .margin({top: 50, right: 50, bottom: 50, left: 50});
 
+    // Get the data just for these two countries.
+    chart_data = make_chart_data(default_country_1, default_country_2);
+
     container = d3.select('#container')
-                  .datum([{
-                        name: 'United States',
-                        values: data['United States']
-                      }
-                      ,
-                      {
-                        name: 'China',
-                        values: data['China']
-                      }
-                      ])
+                  .datum(chart_data)
                   .call(chart);
   };
 
   var init_form = function() {
     // Add all the countries we have data for to the select field.
     d3.keys(data).forEach(function(country) {
-      var option = $('<option/>').attr('value', country).text(country);
-      if (country == default_country) {
-        option.attr('selected', 'selected');
+      var option1 = $('<option/>').attr('value', country).text(country);
+      var option2 = $('<option/>').attr('value', country).text(country);
+      if (country == default_country_1) {
+        option1.attr('selected', 'selected');
       };
-      $('#countries').append(option);
+      if (country == default_country_2) {
+        option2.attr('selected', 'selected');
+      };
+      $('#countries1').append(option1);
+      $('#countries2').append(option2);
     });
 
     // When a new country is selected, change the chart.
-    $('#countries').on('change', on_country_select_change);
+    $('#countries1, #countries2').on('change', change_countries);
   };
 
-  var on_country_select_change = function(ev) {
-    change_country(ev.target.selectedOptions[0].value);
+  var change_countries = function(ev) {
+    var chart_data = make_chart_data(
+                      $('#countries1 option:selected').val(),
+                      $('#countries2 option:selected').val());
+    update_chart(chart_data);
   };
 
-  /**
-   * `country` is the name of the country, eg 'United States'.
-   * Should match a key in the combined data structure.
-   */
-  var change_country = function(country) {
-    update_chart(data[country]);
+
+  // Returns an array something like:
+  // [
+  //  {name: 'United Kingdom',
+  //   values: [...]},
+  //   {name: 'United States',
+  //   values: [...]}
+  // ]
+  var make_chart_data = function(country_1, country_2) {
+    var chart_data = [],
+        country_1_data = null,
+        country_2_data = null;
+
+    if (country_1 in data) {
+      chart_data.push({
+        name: country_1,
+        values: data[country_1]
+      });
+    };
+    if (country_2 in data) {
+      chart_data.push({
+        name: country_2,
+        values: data[country_2]
+      });
+    };
+    
+    return chart_data;
   };
 
-  var update_chart = function(country_data) {
-    container.datum(country_data)
+  var update_chart = function(chart_data) {
+    container.datum(chart_data)
               .transition()
               .ease('linear')
               .call(chart);
