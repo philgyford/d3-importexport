@@ -193,61 +193,112 @@ impexp.chart = function module() {
       inner_height = height - margin.top - margin.bottom;
 
       // Update scales.
-      xScale.domain(d3.extent(data, function(d) { return d.year; }))
-            .range([0, inner_width]);
 
+      // Use min/max of the years from all countries we're displaying.
+      xScale.domain([
+        d3.min(data, function(country){
+          return d3.min(country.values, function(v) { return v.year; })
+        }),
+        d3.max(data, function(country){
+          return d3.max(country.values, function(v) { return v.year; })
+        })
+      ]).range([0, inner_width]);
+
+      // Use maximum value of all imports or exports from all countries.
       yScale.domain([
         0,
-        d3.max(data, function(d) { return Math.max(d['imports'], d['exports']); })
+        d3.max(data, function(country){
+          return d3.max(country.values, function(v) {
+            return Math.max(v.imports, v.exports);
+          })
+        }),
       ]).range([inner_height, 0]);
 
+      // We'll make a structure like: svg > g > g.lines > path.line.imports
+ 
       // Select svg element if it exists.
       var svg = d3.select(this)
                   .selectAll('svg')
                   .data([data]);
 
       // Or create skeletal chart, with no data applied.
-      var gEnter = svg.enter().append('svg').append('g');
+      var g = svg.enter().append('svg').append('g');
 
-      gEnter.append('clipPath')
-              .attr('id', 'clip-surplus')
-            .append('path')
-              .attr('class', 'clip surplus');
+      g.append('g').attr('class', 'x axis');
+      g.append('g').attr('class', 'y axis');
 
-      gEnter.append('clipPath')
-              .attr('id', 'clip-deficit')
-            .append('path')
-              .attr('class', 'clip deficit');
+      // Update outer and inner dimensions.
+      svg.transition().attr({ width: width, height: height });
+      g.attr('transform', 'translate(' + margin.left +','+ margin.right + ')');
 
-      gEnter.append('path')
-              .attr('class', 'area surplus')
-              .attr('clip-path', 'url("#clip-surplus")');
 
-      gEnter.append('path')
-              .attr('class', 'area deficit')
-              .attr('clip-path', 'url("#clip-deficit")');
+          
+      // Create lines group and assign the data for each country to each group.
+      var lines = g.selectAll("g.lines").data(function(d) { return d; });
+      lines.enter().append("g").attr("class", "lines");
 
-      gEnter.append('path').attr('class', 'line imports');
-      gEnter.append('path').attr('class', 'line exports');
-      gEnter.append('g').attr('class', 'x axis');
-      gEnter.append('g').attr('class', 'y axis');
+      //g.select('.clip.surplus').attr('d', area.y0(0));
+      //g.append('clipPath')
+              //.attr('id', 'clip-surplus')
+            //.append('path')
+              //.attr('class', 'clip surplus');
 
-      // Update outer dimensions.
-      svg.transition()
-          .attr({ width: width, height: height });
-      // Update inner dimensions.
-      var g = svg.select('g')
-                .attr('transform',
-                  'translate(' + margin.left + ',' + margin.right + ')');
+      //g.select('.area.surplus').attr('d', area.y0(
+                                //function(d) { return yScale(d['exports']); }));
+      //g.append('path')
+              //.attr('class', 'area surplus')
+              //.attr('clip-path', 'url("#clip-surplus")');
 
-      // Update lines/areas.
-      g.select('.clip.surplus').attr('d', area.y0(0));
-      g.select('.clip.deficit').attr('d', area.y0(inner_height));
-      g.select('.area.surplus').attr('d', area.y0(
-                                function(d) { return yScale(d['exports']); }));
-      g.select('.area.deficit').attr('d', area);
-      g.select('.line.imports').attr('d', imports_line);
-      g.select('.line.exports').attr('d', exports_line);
+      //g.select('.clip.deficit').attr('d', area.y0(inner_height));
+      //g.append('clipPath')
+              //.attr('id', 'clip-deficit')
+            //.append('path')
+              //.attr('class', 'clip deficit');
+
+      //g.select('.area.deficit').attr('d', area);
+      //g.append('path')
+              //.attr('class', 'area deficit')
+              //.attr('clip-path', 'url("#clip-deficit")');
+      
+      // Create each of the two lines within each lines group,
+      // and assign the values from that country to that line.
+      lines.selectAll("path.line.imports")
+          .data(function(d) { return [d.values]; })
+          .enter().append("path").attr('class', 'line imports')
+          .attr("d", function(d) { return imports_line(d); });
+      lines.selectAll("path.line.exports")
+          .data(function(d) { return [d.values]; })
+          .enter().append("path").attr('class', 'line exports')
+          .attr("d", function(d) { return exports_line(d); });
+
+      // Make clipPaths for the shaded areas.
+      
+      lines.selectAll('clipPath.clip.surplus')
+          .data(function(d) { return [d.values]; })
+          .enter().append('clipPath')
+          .attr('class', 'clip surplus').attr('id', 'clip-surplus')
+          .append('path').attr('d', area.y0(0));
+
+      lines.selectAll('clipPath.clip.deficit')
+          .data(function(d) { return [d.values]; })
+          .enter().append('clipPath')
+          .attr('class', 'clip deficit').attr('id', 'clip-deficit')
+          .append('path').attr('d', area.y0(inner_height));
+
+      // Draw the shaded areas, using the clipPaths.
+
+      lines.selectAll('path.area.surplus')
+          .data(function(d) { return [d.values]; })
+          .enter().append('path').attr('class', 'area surplus')
+          .attr('clip-path', 'url(#clip-surplus)')
+          .attr('d', area.y0(function(d) { return yScale(d.exports); }));
+          
+      lines.selectAll('path.area.deficit')
+          .data(function(d) { return [d.values]; })
+          .enter().append('path').attr('class', 'area deficit')
+          .attr('clip-path', 'url(#clip-deficit)')
+          .attr('d', area);
+
 
       // Update axes.
       g.select('.x.axis')
@@ -366,7 +417,16 @@ impexp.controller = function module() {
                   .margin({top: 50, right: 50, bottom: 50, left: 50});
 
     container = d3.select('#container')
-                  .datum(data[default_country])
+                  .datum([{
+                        name: 'United States',
+                        values: data['United States']
+                      }
+                      ,
+                      {
+                        name: 'China',
+                        values: data['China']
+                      }
+                      ])
                   .call(chart);
   };
 

@@ -28,3 +28,9 @@ body {
   stroke: #090;
 }
 
+.imports {
+	color: #900;
+}
+.exports {
+	color: #090;
+}
