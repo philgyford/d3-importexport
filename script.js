@@ -223,10 +223,12 @@ impexp.chart = function module() {
 
       // Or create skeletal chart, with no data applied.
       var g = svg.enter().append('svg').append('g').attr('class', 'main');
-      g = svg.select('g.main');
 
       g.append('g').attr('class', 'x axis');
       g.append('g').attr('class', 'y axis');
+
+      // If g.main already exists, we need to explicitly select it:
+      g = svg.select('g.main');
 
       // Update outer and inner dimensions.
       svg.transition().attr({ width: width, height: height });
@@ -241,7 +243,8 @@ impexp.chart = function module() {
 
       lines.selectAll("path.line.imports")
           .data(function(d) { return [d.values]; })
-          .enter().append("path").attr('class', 'line imports');
+          .enter().append("path")
+            .attr('class', 'line imports');
 
       lines.selectAll('path.line.imports')
           .data(function(d) { return [d.values]; })
@@ -250,7 +253,8 @@ impexp.chart = function module() {
 
       lines.selectAll("path.line.exports")
           .data(function(d) { return [d.values]; })
-          .enter().append("path").attr('class', 'line exports');
+          .enter().append("path")
+            .attr('class', 'line exports');
 
       lines.selectAll('path.line.exports')
           .data(function(d) { return [d.values]; })
@@ -258,33 +262,51 @@ impexp.chart = function module() {
           .attr("d", function(d) { return exports_line(d); });
 
       // Make clipPaths for the shaded areas.
-      
-      //lines.selectAll('clipPath.clip.surplus')
-          //.data(function(d) { return [d.values]; })
-          //.enter().append('clipPath')
-          //.attr('class', 'clip surplus').attr('id', 'clip-surplus')
-          //.append('path').attr('d', area.y0(0));
 
-      //lines.selectAll('clipPath.clip.deficit')
-          //.data(function(d) { return [d.values]; })
-          //.enter().append('clipPath')
-          //.attr('class', 'clip deficit').attr('id', 'clip-deficit')
-          //.append('path').attr('d', area.y0(inner_height));
+      lines.selectAll('clipPath.clip.surplus')
+        .data(function(d) { return [d.values]; })
+        .enter().append('clipPath')
+          .attr('class', 'clip surplus')
+          .attr('id', 'clip-surplus')
+          .append('path')
+            .attr('class', 'clip surplus');
 
-      //// Draw the shaded areas, using the clipPaths.
+      lines.selectAll('path.clip.surplus')
+        .data(function(d) { return [d.values]; })
+        .transition()
+        .attr('d', area.y0(0));
 
-      //lines.selectAll('path.area.surplus')
-          //.data(function(d) { return [d.values]; })
-          //.enter().append('path').attr('class', 'area surplus')
-          //.attr('clip-path', 'url(#clip-surplus)')
-          //.attr('d', area.y0(function(d) { return yScale(d.exports); }));
+      lines.selectAll('clipPath.clip.deficit')
+        .data(function(d) { return [d.values]; })
+        .enter().append('clipPath')
+          .attr('class', 'clip deficit')
+          .attr('id', 'clip-deficit')
+          .append('path')
+            .attr('class', 'clip deficit');
+      lines.selectAll('path.clip.deficit')
+        .data(function(d) { return [d.values]; })
+        .transition()
+        .attr('d', area.y0(inner_height));
+
+      // Draw the shaded areas, using the clipPaths.
+
+      lines.selectAll('path.area.surplus')
+        .data(function(d) { return [d.values]; })
+        .enter().append('path')
+          .attr('class', 'area surplus')
+          .attr('clip-path', 'url(#clip-surplus)');
+      lines.selectAll('path.area.surplus')
+        .transition()
+        .attr('d', area.y0(function(d) { return yScale(d.exports); }));
           
-      //lines.selectAll('path.area.deficit')
-          //.data(function(d) { return [d.values]; })
-          //.enter().append('path').attr('class', 'area deficit')
-          //.attr('clip-path', 'url(#clip-deficit)')
-          //.attr('d', area);
-
+      lines.selectAll('path.area.deficit')
+        .data(function(d) { return [d.values]; })
+        .enter().append('path')
+          .attr('class', 'area deficit')
+          .attr('clip-path', 'url(#clip-deficit)')
+      lines.selectAll('path.area.deficit')
+        .transition()
+        .attr('d', area);
 
       // Update axes.
       g.select('.x.axis')
@@ -349,7 +371,7 @@ impexp.controller = function module() {
       chart,
       data,
       container,
-      default_country_1 = 'United Kingdom',
+      default_country_1 = 'China',
       default_country_2 = 'United States',
       importsDataManager = impexp.dataManager(),
       exportsDataManager = impexp.dataManager();
