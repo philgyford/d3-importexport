@@ -263,20 +263,23 @@ impexp.chart = function module() {
 
       // Make clipPaths for the shaded areas.
 
-      lines.selectAll('clipPath.clip.surplus')
+      // This did select 'clipPath.clip.surplus' but this results in creating
+      // NEW clippaths with every transition. No idea.
+      lines.selectAll('.clip.surplus')
         .data(function(d) { return [d.values]; })
         .enter().append('clipPath')
           .attr('class', 'clip surplus')
           .attr('id', 'clip-surplus')
           .append('path')
             .attr('class', 'clip surplus');
-
       lines.selectAll('path.clip.surplus')
         .data(function(d) { return [d.values]; })
         .transition()
         .attr('d', area.y0(0));
 
-      lines.selectAll('clipPath.clip.deficit')
+      // This did select 'clipPath.clip.deficit' but this results in creating
+      // NEW clippaths with every transition. No idea.
+      lines.selectAll('.clip.deficit')
         .data(function(d) { return [d.values]; })
         .enter().append('clipPath')
           .attr('class', 'clip deficit')
