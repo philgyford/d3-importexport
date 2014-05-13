@@ -163,17 +163,14 @@ impexp.chart = function module() {
       height = 300,
       inner_width = width - margin.left - margin.right,
       inner_height = height - margin.top - margin.bottom,
+      svg,
+      main_g,
       xValue = function(d) { return d[0]; },
       yValue = function(d) { return d[1]; },
       xScale = d3.time.scale(),
       yScale = d3.scale.linear(),
-      xAxis = d3.svg.axis().scale(xScale).orient('bottom')
-                  .tickFormat(d3.time.format('%Y'))
-                  .ticks(d3.time.years, 5),
-      yAxis = d3.svg.axis().scale(yScale).orient('left')
-                  .tickFormat(function(d){
-                    return d3.format(',')(d / 1000000000);
-                  }),
+      xAxis,
+      yAxis,
       // defined() ensures we only draw the lines where there is data.
       imports_line = d3.svg.line().x(X).y(YImports)
                         .defined(function(d){ return d.imports !== null; }),
@@ -217,107 +214,153 @@ impexp.chart = function module() {
       // We'll make a structure like: svg > g > g.lines > path.line.imports
  
       // Select svg element if it exists.
-      var svg = d3.select(this)
+      svg = d3.select(this)
                   .selectAll('svg')
                   .data([data]);
 
       // Or create skeletal chart, with no data applied.
-      var g = svg.enter().append('svg').append('g').attr('class', 'main');
-
-      g.append('g').attr('class', 'x axis');
-      g.append('g').attr('class', 'y axis');
+      main_g = svg.enter()
+                        .append('svg')
+                          .append('g')
+                            .attr('class', 'main');
 
       // If g.main already exists, we need to explicitly select it:
-      g = svg.select('g.main');
+      main_g = svg.select('g.main');
 
       // Update outer and inner dimensions.
       svg.transition().attr({ width: width, height: height });
-      g.attr('transform', 'translate(' + margin.left +','+ margin.right + ')');
+      main_g.attr('transform', 'translate(' + margin.left +','+ margin.right + ')');
 
-      // Create lines group and assign the data for each country to each group.
-      var lines = g.selectAll("g.lines").data(function(d) { return d; });
-      lines.enter().append("g").attr("class", "lines");
+      renderAxes();
 
-      // Create each of the two lines within each lines group,
-      // and assign the values from that country to that line.
-
-      lines.selectAll("path.line.imports")
-          .data(function(d) { return [d.values]; })
-          .enter().append("path")
-            .attr('class', 'line imports');
-
-      lines.selectAll('path.line.imports')
-          .data(function(d) { return [d.values]; })
-          .transition()
-          .attr("d", function(d) { return imports_line(d); });
-
-      lines.selectAll("path.line.exports")
-          .data(function(d) { return [d.values]; })
-          .enter().append("path")
-            .attr('class', 'line exports');
-
-      lines.selectAll('path.line.exports')
-          .data(function(d) { return [d.values]; })
-          .transition()
-          .attr("d", function(d) { return exports_line(d); });
-
-      // Make clipPaths for the shaded areas.
-
-      // This did select 'clipPath.clip.surplus' but this results in creating
-      // NEW clippaths with every transition. No idea.
-      lines.selectAll('.clip.surplus')
-        .data(function(d) { return [d.values]; })
-        .enter().append('clipPath')
-          .attr('class', 'clip surplus')
-          .attr('id', 'clip-surplus')
-          .append('path')
-            .attr('class', 'clip surplus');
-      lines.selectAll('path.clip.surplus')
-        .data(function(d) { return [d.values]; })
-        .transition()
-        .attr('d', area.y0(0));
-
-      // This did select 'clipPath.clip.deficit' but this results in creating
-      // NEW clippaths with every transition. No idea.
-      lines.selectAll('.clip.deficit')
-        .data(function(d) { return [d.values]; })
-        .enter().append('clipPath')
-          .attr('class', 'clip deficit')
-          .attr('id', 'clip-deficit')
-          .append('path')
-            .attr('class', 'clip deficit');
-      lines.selectAll('path.clip.deficit')
-        .data(function(d) { return [d.values]; })
-        .transition()
-        .attr('d', area.y0(inner_height));
-
-      // Draw the shaded areas, using the clipPaths.
-
-      lines.selectAll('path.area.surplus')
-        .data(function(d) { return [d.values]; })
-        .enter().append('path')
-          .attr('class', 'area surplus')
-          .attr('clip-path', 'url(#clip-surplus)');
-      lines.selectAll('path.area.surplus')
-        .transition()
-        .attr('d', area.y0(function(d) { return yScale(d.exports); }));
-          
-      lines.selectAll('path.area.deficit')
-        .data(function(d) { return [d.values]; })
-        .enter().append('path')
-          .attr('class', 'area deficit')
-          .attr('clip-path', 'url(#clip-deficit)')
-      lines.selectAll('path.area.deficit')
-        .transition()
-        .attr('d', area);
-
-      // Update axes.
-      g.select('.x.axis')
-        .attr('transform', 'translate(0,' + yScale.range()[0] + ')')
-        .call(xAxis);
-      g.select('.y.axis')
-        .call(yAxis);
+      renderBody();
     });
+  };
+  
+  function renderAxes() {
+    var axes_g = main_g.append("g").attr("class", "axes");
+
+    renderXAxis(axes_g);
+    renderYAxis(axes_g);
+  };
+
+  function renderXAxis(axes_g) {
+    xAxis = d3.svg.axis()
+                  .scale(xScale)
+                  .orient('bottom')
+                  .tickFormat(d3.time.format('%Y'))
+                  .ticks(d3.time.years, 5);
+
+    axes_g.append('g').attr('class', 'x axis');
+
+    main_g.select('.x.axis')
+            .attr('transform', 'translate(0,' + yScale.range()[0] + ')')
+            .call(xAxis);
+  };
+
+  function renderYAxis(axes_g) {
+    yAxis = d3.svg.axis()
+                  .scale(yScale)
+                  .orient('left')
+                  .tickFormat(function(d){
+                    return d3.format(',')(d / 1000000000)
+                  });
+
+    axes_g.append('g').attr('class', 'y axis');
+
+    main_g.select('.y.axis')
+            .call(yAxis);
+  };
+
+  function renderBody() {
+    // Create lines group and assign the data for each country to each group.
+    // Each g.lines will contain a pair of lines and a pair of clipped areas.
+    var lines_g = main_g.selectAll("g.lines")
+                          .data(function(d) { return d; });
+
+    lines_g.enter().append("g")
+                      .attr("class", "lines");
+
+    renderLines(lines_g);
+
+    renderAreas(lines_g);
+  };
+
+  function renderLines(lines_g) {
+    // Create each of the two lines within each lines group,
+    // and assign the values from that country to that line.
+
+    lines_g.selectAll("path.line.imports")
+        .data(function(d) { return [d.values]; })
+        .enter().append("path")
+          .attr('class', 'line imports');
+
+    lines_g.selectAll('path.line.imports')
+        .data(function(d) { return [d.values]; })
+        .transition()
+        .attr("d", function(d) { return imports_line(d); });
+
+    lines_g.selectAll("path.line.exports")
+        .data(function(d) { return [d.values]; })
+        .enter().append("path")
+          .attr('class', 'line exports');
+
+    lines_g.selectAll('path.line.exports')
+        .data(function(d) { return [d.values]; })
+        .transition()
+        .attr("d", function(d) { return exports_line(d); });
+  };
+
+  function renderAreas(lines_g) {
+    // Make clipPaths for the shaded areas.
+
+    // This did select 'clipPath.clip.surplus' but this results in creating
+    // NEW clippaths with every transition. No idea.
+    lines_g.selectAll('.clip.surplus')
+      .data(function(d) { return [d.values]; })
+      .enter().append('clipPath')
+        .attr('class', 'clip surplus')
+        .attr('id', 'clip-surplus')
+        .append('path')
+          .attr('class', 'clip surplus');
+    lines_g.selectAll('path.clip.surplus')
+      .data(function(d) { return [d.values]; })
+      .transition()
+      .attr('d', area.y0(0));
+
+    // This did select 'clipPath.clip.deficit' but this results in creating
+    // NEW clippaths with every transition. No idea.
+    lines_g.selectAll('.clip.deficit')
+      .data(function(d) { return [d.values]; })
+      .enter().append('clipPath')
+        .attr('class', 'clip deficit')
+        .attr('id', 'clip-deficit')
+        .append('path')
+          .attr('class', 'clip deficit');
+    lines_g.selectAll('path.clip.deficit')
+      .data(function(d) { return [d.values]; })
+      .transition()
+      .attr('d', area.y0(inner_height));
+
+    // Draw the shaded areas, using the clipPaths.
+
+    lines_g.selectAll('path.area.surplus')
+      .data(function(d) { return [d.values]; })
+      .enter().append('path')
+        .attr('class', 'area surplus')
+        .attr('clip-path', 'url(#clip-surplus)');
+    lines_g.selectAll('path.area.surplus')
+      .transition()
+      .attr('d', area.y0(function(d) { return yScale(d.exports); }));
+        
+    lines_g.selectAll('path.area.deficit')
+      .data(function(d) { return [d.values]; })
+      .enter().append('path')
+        .attr('class', 'area deficit')
+        .attr('clip-path', 'url(#clip-deficit)')
+    lines_g.selectAll('path.area.deficit')
+      .transition()
+      .attr('d', area);
   };
 
   // The x-accessor for the path generator; xScale âˆ˜ xValue.
