@@ -185,60 +185,66 @@ impexp.chart = function module() {
 
   function exports(_selection) {
     _selection.each(function(data) {
-
-      inner_width = width - margin.left - margin.right;
-      inner_height = height - margin.top - margin.bottom;
-
-      // Update scales.
-
-      // Use min/max of the years from all countries we're displaying.
-      xScale.domain([
-        d3.min(data, function(country){
-          return d3.min(country.values, function(v) { return v.year; })
-        }),
-        d3.max(data, function(country){
-          return d3.max(country.values, function(v) { return v.year; })
-        })
-      ]).range([0, inner_width]);
-
-      // Use maximum value of all imports or exports from all countries.
-      yScale.domain([
-        0,
-        d3.max(data, function(country){
-          return d3.max(country.values, function(v) {
-            return Math.max(v.imports, v.exports);
-          })
-        }),
-      ]).range([inner_height, 0]);
-
-      // We'll make a structure like: svg > g > g.lines > path.line.imports
- 
+      
       // Select svg element if it exists.
       svg = d3.select(this)
-                  .selectAll('svg')
+                .selectAll('svg')
                   .data([data]);
 
-      // Or create skeletal chart, with no data applied.
-      main_g = svg.enter()
-                        .append('svg')
-                          .append('g')
-                            .attr('class', 'main');
+      createMain();
 
-      // If g.main already exists, we need to explicitly select it:
-      main_g = svg.select('g.main');
-
-      // Update outer and inner dimensions.
-      svg.transition().attr({ width: width, height: height });
-      main_g.attr('transform', 'translate(' + margin.left +','+ margin.right + ')');
+      updateScales(data);
 
       renderAxes();
 
       renderBody();
     });
   };
+
+  // We'll make a structure like: svg > g > g.lines > path.line.imports
+  function createMain() {
+    // Create skeletal chart, with no data applied.
+    main_g = svg.enter()
+                  .append('svg')
+                    .append('g')
+                      .attr('class', 'main');
+
+    // If g.main already exists, we need to explicitly select it:
+    main_g = svg.select('g.main');
+
+    // Update outer and inner dimensions.
+    svg.transition().attr({ width: width, height: height });
+    main_g.attr('transform', 'translate(' + margin.left +','+ margin.right + ')');
+  };
   
+  function updateScales(data) {
+    inner_width = width - margin.left - margin.right;
+    inner_height = height - margin.top - margin.bottom;
+
+    // Use min/max of the years from all countries we're displaying.
+    xScale.domain([
+      d3.min(data, function(country){
+        return d3.min(country.values, function(v) { return v.year; })
+      }),
+      d3.max(data, function(country){
+        return d3.max(country.values, function(v) { return v.year; })
+      })
+    ]).range([0, inner_width]);
+
+    // Use maximum value of all imports or exports from all countries.
+    yScale.domain([
+      0,
+      d3.max(data, function(country){
+        return d3.max(country.values, function(v) {
+          return Math.max(v.imports, v.exports);
+        })
+      }),
+    ]).range([inner_height, 0]);
+  };
+
   function renderAxes() {
-    var axes_g = main_g.append("g").attr("class", "axes");
+    var axes_g = main_g.append("g")
+                          .attr("class", "axes");
 
     renderXAxis(axes_g);
     renderYAxis(axes_g);
@@ -251,7 +257,8 @@ impexp.chart = function module() {
                   .tickFormat(d3.time.format('%Y'))
                   .ticks(d3.time.years, 5);
 
-    axes_g.append('g').attr('class', 'x axis');
+    axes_g.append('g')
+            .attr('class', 'x axis');
 
     main_g.select('.x.axis')
             .attr('transform', 'translate(0,' + yScale.range()[0] + ')')
@@ -266,7 +273,8 @@ impexp.chart = function module() {
                     return d3.format(',')(d / 1000000000)
                   });
 
-    axes_g.append('g').attr('class', 'y axis');
+    axes_g.append('g')
+            .attr('class', 'y axis');
 
     main_g.select('.y.axis')
             .call(yAxis);
@@ -280,6 +288,8 @@ impexp.chart = function module() {
 
     lines_g.enter().append("g")
                       .attr("class", "lines");
+
+    lines_g.exit().remove();
 
     renderLines(lines_g);
 
