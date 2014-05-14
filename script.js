@@ -169,8 +169,17 @@ impexp.chart = function module() {
       yValue = function(d) { return d[1]; },
       xScale = d3.time.scale(),
       yScale = d3.scale.linear(),
-      xAxis,
-      yAxis,
+      xAxis = d3.svg.axis()
+                  .scale(xScale)
+                  .orient('bottom')
+                  .tickFormat(d3.time.format('%Y'))
+                  .ticks(d3.time.years, 5),
+      yAxis = d3.svg.axis()
+                  .scale(yScale)
+                  .orient('left')
+                  .tickFormat(function(d){
+                    return d3.format(',')(d / 1000000000)
+                  }),
       // defined() ensures we only draw the lines where there is data.
       imports_line = d3.svg.line().x(X).y(YImports)
                         .defined(function(d){ return d.imports !== null; }),
@@ -209,6 +218,12 @@ impexp.chart = function module() {
                     .append('g')
                       .attr('class', 'main');
 
+    // If this happens after the following svg.select('g.main'), then we end
+    // up with mulitple g.axes elements, one each time we select a new
+    // country. I don't know why.
+    axes_g = main_g.append("g")
+                      .attr("class", "axes");
+
     // If g.main already exists, we need to explicitly select it:
     main_g = svg.select('g.main');
 
@@ -243,20 +258,11 @@ impexp.chart = function module() {
   };
 
   function renderAxes() {
-    var axes_g = main_g.append("g")
-                          .attr("class", "axes");
-
     renderXAxis(axes_g);
     renderYAxis(axes_g);
   };
 
   function renderXAxis(axes_g) {
-    xAxis = d3.svg.axis()
-                  .scale(xScale)
-                  .orient('bottom')
-                  .tickFormat(d3.time.format('%Y'))
-                  .ticks(d3.time.years, 5);
-
     axes_g.append('g')
             .attr('class', 'x axis');
 
@@ -266,13 +272,6 @@ impexp.chart = function module() {
   };
 
   function renderYAxis(axes_g) {
-    yAxis = d3.svg.axis()
-                  .scale(yScale)
-                  .orient('left')
-                  .tickFormat(function(d){
-                    return d3.format(',')(d / 1000000000)
-                  });
-
     axes_g.append('g')
             .attr('class', 'y axis');
 
