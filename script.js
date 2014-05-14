@@ -273,17 +273,17 @@ impexp.chart = function module() {
 
   function renderYAxis(axes_g) {
     axes_g.append('g')
-            .attr('class', 'y axis');
-
-    main_g.select('.y.axis')
-            .call(yAxis)
-              .append("text")
+            .attr('class', 'y axis')
+            .append("text")
               .attr("transform", "rotate(-90)")
               .attr("y", 0 - margin.left)
               .attr("x", 0 - (inner_height / 2))
               .attr("dy", "1em")
               .style("text-anchor", "middle")
               .text("US$ Billion");;
+
+    main_g.select('.y.axis')
+            .call(yAxis);
   };
 
   function renderBody() {
