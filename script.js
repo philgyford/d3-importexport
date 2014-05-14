@@ -158,9 +158,9 @@ impexp.dataCombiner = function module() {
 };
 
 impexp.chart = function module() {
-  var margin = {top: 20, right: 20, bottom: 30, left: 50},
-      width = 400,
-      height = 300,
+  var margin = {top: 50, right: 80, bottom: 50, left: 80},
+      width = 800,
+      height = 400,
       inner_width = width - margin.left - margin.right,
       inner_height = height - margin.top - margin.bottom,
       svg,
@@ -325,6 +325,41 @@ impexp.chart = function module() {
         .data(function(d) { return [d.values]; })
         .transition()
         .attr("d", function(d) { return exports_line(d); });
+
+    var label_data = function(d) {
+                // Get the final set of data (year, imports, exports) for this
+                // line/country:
+                var values = d.values[d.values.length - 1];
+                return {
+                  label: d.name,
+                  // Position label between final import and export values.
+                  y_value: (values.imports + values.exports) / 2,
+                  x_value: values.year
+                };
+              };
+
+    // Add country name labels to right-hand end of lines.
+    lines_g.selectAll('text.label')
+            .data(function(d) { return [d]; })
+            .enter().append('text')
+              .attr('class', 'label')
+              .attr('x', 3)
+              .attr('dy', '0.5em');
+
+    lines_g.selectAll('text.label')
+            .data(function(d) { return [d]; })
+            .transition()
+            .text(function(d) { return d.name; })
+            .attr('transform',function(d) {
+                // Get the final set of data (year, imports, exports) for this
+                // line/country:
+                var values = d.values[d.values.length - 1];
+                // Position label between final import and export values.
+                var y_val = (values.imports + values.exports) / 2;
+                var x_val = values.year;
+                return 'translate(' + xScale(x_val) +','+ yScale(y_val) + ')';
+            });
+
   };
 
   function renderAreas(lines_g) {
@@ -483,9 +518,7 @@ impexp.controller = function module() {
 
     init_form();
 
-    chart = impexp.chart()
-                  .width(800).height(400)
-                  .margin({top: 50, right: 50, bottom: 50, left: 80});
+    chart = impexp.chart();
 
     // Get the data just for these two countries.
     chart_data = make_chart_data(default_country_1, default_country_2);
