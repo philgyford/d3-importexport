@@ -276,7 +276,14 @@ impexp.chart = function module() {
             .attr('class', 'y axis');
 
     main_g.select('.y.axis')
-            .call(yAxis);
+            .call(yAxis)
+              .append("text")
+              .attr("transform", "rotate(-90)")
+              .attr("y", 0 - margin.left)
+              .attr("x", 0 - (inner_height / 2))
+              .attr("dy", "1em")
+              .style("text-anchor", "middle")
+              .text("US$ Billion");;
   };
 
   function renderBody() {
@@ -478,7 +485,7 @@ impexp.controller = function module() {
 
     chart = impexp.chart()
                   .width(800).height(400)
-                  .margin({top: 50, right: 50, bottom: 50, left: 50});
+                  .margin({top: 50, right: 50, bottom: 50, left: 80});
 
     // Get the data just for these two countries.
     chart_data = make_chart_data(default_country_1, default_country_2);
