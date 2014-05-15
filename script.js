@@ -299,10 +299,18 @@ impexp.chart = function module() {
 
     renderLines(lines_g);
 
+    renderLineLabels(lines_g);
+
     renderAreas(lines_g);
+
+    // Calling this before renderAreas() is called makes some of the area
+    // coloring go weird. I don't know.
+    //arrangeLineLabels(lines_g);
   };
 
+  // The pairs of import/export lines for each country.
   function renderLines(lines_g) {
+
     // Create each of the two lines within each lines group,
     // and assign the values from that country to that line.
 
@@ -326,25 +334,24 @@ impexp.chart = function module() {
         .transition()
         .attr("d", function(d) { return exports_line(d); });
 
-    var label_data = function(d) {
-                // Get the final set of data (year, imports, exports) for this
-                // line/country:
-                var values = d.values[d.values.length - 1];
-                return {
-                  label: d.name,
-                  // Position label between final import and export values.
-                  y_value: (values.imports + values.exports) / 2,
-                  x_value: values.year
-                };
-              };
+  };
 
-    // Add country name labels to right-hand end of lines.
+  // Add country name labels to right-hand end of lines.
+  function renderLineLabels(lines_g) {
     lines_g.selectAll('text.label')
             .data(function(d) { return [d]; })
             .enter().append('text')
               .attr('class', 'label')
               .attr('x', 3)
-              .attr('dy', '0.5em');
+              .attr('dy', '0.5em')
+              .attr('transform', function(d){
+                // Starting position before transform, at bottom of right-hand
+                // edge of chart.
+                var values = d.values[d.values.length - 1];
+                var y_val = 0;
+                var x_val = values.year;
+                return 'translate(' + xScale(x_val) +','+ yScale(y_val) + ')';
+              });
 
     lines_g.selectAll('text.label')
             .data(function(d) { return [d]; })
@@ -358,19 +365,65 @@ impexp.chart = function module() {
                 var y_val = (values.imports + values.exports) / 2;
                 var x_val = values.year;
                 return 'translate(' + xScale(x_val) +','+ yScale(y_val) + ')';
-            });
+            })
+            // After movement has finished, check there's no overlap.
+            .each('end', function(){arrangeLineLabels(lines_g);});
 
   };
 
+  // If line labels are overlapping, move them until they're not.
+  function arrangeLineLabels(lines_g) {
+
+    // Based on http://stackoverflow.com/a/23373686/250962
+    // Code: http://bl.ocks.org/larskotthoff/11406992
+    var move = 1;
+    while(move > 0) {
+      move = 0;
+      lines_g
+        .selectAll('text.label')
+        .each(function(){
+          var label_a = this,
+              a = this.getBoundingClientRect();
+          lines_g
+            .selectAll('text.label')
+            .each(function(){
+              var label_b = this;
+              if (label_b != label_a) {
+                var b = label_b.getBoundingClientRect();
+                if((Math.abs(a.left - b.left) * 2 < (a.width + b.width)) &&
+                   (Math.abs(a.top - b.top) * 2 < (a.height + b.height))) {
+                  // The labels are overlapping.
+                  var dx = (Math.max(0, a.right - b.left) +
+                           Math.min(0, a.left - b.right)) * 0.01,
+                      dy = (Math.max(0, a.bottom - b.top) +
+                           Math.min(0, a.top - b.bottom)) * 0.02,
+                      tt = d3.transform(d3.select(label_b).attr("transform")),
+                      to = d3.transform(d3.select(label_a).attr("transform"));
+                  move += Math.abs(dx) + Math.abs(dy);
+                
+                  to.translate = [ to.translate[0] + dx, to.translate[1] + dy ];
+                  tt.translate = [ tt.translate[0] - dx, tt.translate[1] - dy ];
+                  d3.select(label_b).attr("transform", "translate(" + tt.translate + ")");
+                  d3.select(label_a).attr("transform", "translate(" + to.translate + ")");
+                  a = label_b.getBoundingClientRect();
+                };
+              };
+            });
+        });
+    };
+  
+  };
+
+  // The shaded areas between pairs of lines.
   function renderAreas(lines_g) {
+
     // Make clipPaths for the shaded areas.
 
     // This did select 'clipPath.clip.surplus' but this results in creating
     // NEW clippaths with every transition. No idea.
-    lines_g.selectAll('.clip.surplus')
+    lines_g.selectAll('#clip-surplus')
       .data(function(d) { return [d.values]; })
       .enter().append('clipPath')
-        .attr('class', 'clip surplus')
         .attr('id', 'clip-surplus')
         .append('path')
           .attr('class', 'clip surplus');
@@ -381,10 +434,9 @@ impexp.chart = function module() {
 
     // This did select 'clipPath.clip.deficit' but this results in creating
     // NEW clippaths with every transition. No idea.
-    lines_g.selectAll('.clip.deficit')
+    lines_g.selectAll('#clip-deficit')
       .data(function(d) { return [d.values]; })
       .enter().append('clipPath')
-        .attr('class', 'clip deficit')
         .attr('id', 'clip-deficit')
         .append('path')
           .attr('class', 'clip deficit');
