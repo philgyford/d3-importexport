@@ -158,9 +158,9 @@ impexp.dataCombiner = function module() {
 };
 
 impexp.chart = function module() {
-  var margin = {top: 50, right: 80, bottom: 50, left: 80},
+  var margin = {top: 10, right: 120, bottom: 20, left: 70},
       width = 800,
-      height = 400,
+      height = 350,
       inner_width = width - margin.left - margin.right,
       inner_height = height - margin.top - margin.bottom,
       svg,
@@ -229,7 +229,7 @@ impexp.chart = function module() {
 
     // Update outer and inner dimensions.
     svg.transition().attr({ width: width, height: height });
-    main_g.attr('transform', 'translate(' + margin.left +','+ margin.right + ')');
+    main_g.attr('transform', 'translate(' + margin.left +','+ margin.top + ')');
   };
   
   function updateScales(data) {
@@ -342,7 +342,7 @@ impexp.chart = function module() {
             .data(function(d) { return [d]; })
             .enter().append('text')
               .attr('class', 'label')
-              .attr('x', 3)
+              .attr('x', 6)
               .attr('dy', '0.5em')
               .attr('transform', function(d){
                 // Starting position before transform, at bottom of right-hand

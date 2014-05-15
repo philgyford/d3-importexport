@@ -2,31 +2,42 @@ body {
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
+svg {
+	font-size: 13px;
+}
+.axes {
+  color: #999;
+}
+
 .axis path,
 .axis line {
   fill: none;
-  stroke: #000;
+  stroke: #ccc;
   shape-rendering: crispEdges;
 }
-
-.area.surplus {
-  fill: #cfc;
+.axis text {
+  fill: #999;
 }
-
-.area.deficit {
-  fill: #fcc;
-}
-
 .line {
   fill: none;
   stroke-width: 1.5px;
 }
-.line.imports {
-  stroke: #900;
+  .line.imports {
+    stroke: #c63;
+  }
+  .line.exports {
+    stroke: #393;
+  }
+
+.lines .area {
+  opacity: 0.2;
 }
-.line.exports {
-  stroke: #090;
-}
+  .area.deficit {
+    fill: #f63;
+  }
+  .area.surplus {
+    fill: #6c3;
+  }
 
 .imports {
 	color: #900;

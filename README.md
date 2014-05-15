@@ -12,5 +12,6 @@ Imports: https://datamarket.com/data/set/1777/imports-of-goods-and-services-curr
 * Colours.
 * Size of axes' text.
 * Permalinks.
+* Lock axes to maximum.
 
 
