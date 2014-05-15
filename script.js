@@ -158,7 +158,7 @@ impexp.dataCombiner = function module() {
 };
 
 impexp.chart = function module() {
-  var margin = {top: 10, right: 120, bottom: 20, left: 70},
+  var margin = {top: 10, right: 120, bottom: 20, left: 60},
       width = 800,
       height = 350,
       inner_width = width - margin.left - margin.right,
@@ -302,10 +302,6 @@ impexp.chart = function module() {
     renderLineLabels(lines_g);
 
     renderAreas(lines_g);
-
-    // Calling this before renderAreas() is called makes some of the area
-    // coloring go weird. I don't know.
-    //arrangeLineLabels(lines_g);
   };
 
   // The pairs of import/export lines for each country.
@@ -342,7 +338,7 @@ impexp.chart = function module() {
             .data(function(d) { return [d]; })
             .enter().append('text')
               .attr('class', 'label')
-              .attr('x', 6)
+              .attr('x', 7)
               .attr('dy', '0.5em')
               .attr('transform', function(d){
                 // Starting position before transform, at bottom of right-hand

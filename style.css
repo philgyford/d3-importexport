@@ -11,6 +11,12 @@ h1 {
 p {
   font-size: 13px;
 }
+.imports {
+	color: #900;
+}
+.exports {
+	color: #090;
+}
 
 #loaded {
   display: none;
@@ -18,11 +24,9 @@ p {
 #container {
   margin: 1em 0 2em 0;
 }
-svg {
-	font-size: 13px;
-}
 .axes {
   color: #999;
+  font-size: 11px;
 }
 
 .axis path,
@@ -54,10 +58,7 @@ svg {
   .area.surplus {
     fill: #6c3;
   }
+.label {
+  font-size: 13px;
+}
 
-.imports {
-	color: #900;
-}
-.exports {
-	color: #090;
-}
