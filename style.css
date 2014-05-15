@@ -1,9 +1,15 @@
 body {
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
-p {
+h1, p {
   line-height: 1.3em;
   width: 700px;
+}
+h1 {
+  font-size: 20px;
+}
+p {
+  font-size: 13px;
 }
 
 #loaded {
