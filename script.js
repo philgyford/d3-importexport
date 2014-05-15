@@ -516,8 +516,9 @@ impexp.controller = function module() {
       chart,
       data,
       container,
-      default_country_1 = 'China',
-      default_country_2 = 'United States',
+      // How many columns of, er, checkboxes do we want?
+      checkbox_columns = 4,
+      default_countries = ['China', 'United States'],
       importsDataManager = impexp.dataManager(),
       exportsDataManager = impexp.dataManager();
 
@@ -569,8 +570,8 @@ impexp.controller = function module() {
 
     chart = impexp.chart();
 
-    // Get the data just for these two countries.
-    chart_data = make_chart_data(default_country_1, default_country_2);
+    // Get the data just for these countries.
+    chart_data = make_chart_data(default_countries);
 
     container = d3.select('#container')
                   .datum(chart_data)
@@ -578,32 +579,59 @@ impexp.controller = function module() {
   };
 
   var init_form = function() {
-    // Add all the countries we have data for to the select field.
-    d3.keys(data).forEach(function(country) {
-      var option1 = $('<option/>').attr('value', country).text(country);
-      var option2 = $('<option/>').attr('value', country).text(country);
-      if (country == default_country_1) {
-        option1.attr('selected', 'selected');
+    var country_names = d3.keys(data);
+    var checkboxes_per_column = Math.ceil(
+                                      country_names.length / checkbox_columns);
+    var columns = [];
+    var count = 1;
+    var $ul;
+
+    country_names.forEach(function(country) {
+      if (count == 1) {
+        $ul = $('<ul/>').addClass('column')
+                        .css('width', (100/checkbox_columns) + '%');
       };
-      if (country == default_country_2) {
-        option2.attr('selected', 'selected');
+      var $checkbox = $('<input/>').attr('type', 'checkbox')
+                                    .attr('value', country);
+      if (default_countries.indexOf(country) >= 0) {
+        $checkbox.attr('checked', 'checked');
       };
-      $('#countries1').append(option1);
-      $('#countries2').append(option2);
+      $ul.append(
+        $('<li/>').append(
+          $('<label/>').append($checkbox).append($('<span/>').text(country))
+        )
+      );
+      if (count >= checkboxes_per_column) {
+        columns.push($ul);
+        count = 1;
+      } else {
+        count++;
+      }
+    });
+    columns.push($ul);
+
+    columns.forEach(function($ul) {
+      $('#countries').append($ul);
     });
 
     // When a new country is selected, change the chart.
-    $('#countries1, #countries2').on('change', change_countries);
+    $('#countries input').on('click', change_countries);
   };
 
   var change_countries = function(ev) {
-    var chart_data = make_chart_data(
-                      $('#countries1 option:selected').val(),
-                      $('#countries2 option:selected').val());
+    var countries = [];
+    $('#countries li input').each(function(idx){
+      if ($(this).is(':checked')) {
+        countries.push($(this).val());
+      };
+    });
+    var chart_data = make_chart_data(countries);
     update_chart(chart_data);
   };
 
 
+  // countries is an array of country names.
+  //
   // Returns an array something like:
   // [
   //  {name: 'United Kingdom',
@@ -611,24 +639,18 @@ impexp.controller = function module() {
   //   {name: 'United States',
   //   values: [...]}
   // ]
-  var make_chart_data = function(country_1, country_2) {
-    var chart_data = [],
-        country_1_data = null,
-        country_2_data = null;
+  var make_chart_data = function(countries) {
+    var chart_data = [];
 
-    if (country_1 in data) {
-      chart_data.push({
-        name: country_1,
-        values: data[country_1]
-      });
-    };
-    if (country_2 in data) {
-      chart_data.push({
-        name: country_2,
-        values: data[country_2]
-      });
-    };
-    
+    countries.forEach(function(country) {
+      if (country in data) {
+        chart_data.push({
+          name: country,
+          values: data[country]
+        });
+      };
+    });
+
     return chart_data;
   };
 

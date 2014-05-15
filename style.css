@@ -1,6 +1,31 @@
+*, *:before, *:after {
+  -moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box;
+ }
 body {
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  margin: 1em 20px;
 }
+ul, li {
+  margin: 0;
+  padding: 0;
+}
+.row {
+  margin-bottom: 2em;
+  width: 800px;
+}
+.row:before,
+.row:after {
+    content: " "; /* 1 */
+    display: table; /* 2 */
+}
+.row:after {
+    clear: both;
+}
+.column {
+  float: left;
+  padding: 0 15px;
+}
+
 h1, p {
   line-height: 1.3em;
   width: 700px;
@@ -8,7 +33,7 @@ h1, p {
 h1 {
   font-size: 20px;
 }
-p {
+.notes p {
   font-size: 13px;
 }
 .imports {
@@ -17,6 +42,10 @@ p {
 .exports {
 	color: #090;
 }
+#countries li {
+  list-style-type: none;
+  font-size: 13px;
+}
 
 #loaded {
   display: none;
@@ -24,11 +53,12 @@ p {
 #container {
   margin: 1em 0 2em 0;
 }
+
+/* CHART */
 .axes {
   color: #999;
   font-size: 11px;
 }
-
 .axis path,
 .axis line {
   fill: none;
