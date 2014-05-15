@@ -563,6 +563,7 @@ impexp.controller = function module() {
    */
   var draw_chart = function() {
     $('#wait').hide();
+    $('#loaded').fadeIn(500);
 
     var combiner = impexp.dataCombiner();
     data = combiner.combine(importsDataManager.getCleanedData(),

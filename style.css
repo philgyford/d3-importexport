@@ -1,7 +1,17 @@
 body {
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
+p {
+  line-height: 1.3em;
+  width: 800px;
+}
 
+#loaded {
+  display: none;
+}
+#container {
+  margin: 1em 0 2em 0;
+}
 svg {
 	font-size: 13px;
 }
