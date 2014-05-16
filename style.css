@@ -92,3 +92,9 @@ h1 {
   font-size: 13px;
 }
 
+path.clip {
+  stroke: #00f;
+  stroke-dasharray: 1,5;
+  stroke-width: 3px;
+  fill: none;
+}

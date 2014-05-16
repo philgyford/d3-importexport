@@ -290,7 +290,8 @@ impexp.chart = function module() {
     // Create lines group and assign the data for each country to each group.
     // Each g.lines will contain a pair of lines and a pair of clipped areas.
     var lines_g = main_g.selectAll("g.lines")
-                          .data(function(d) { return d; });
+                      .data(function(d) { return d; },
+                            function(d) { return d.name; });
 
     lines_g.enter().append("g")
                       .attr("class", "lines");
@@ -311,31 +312,30 @@ impexp.chart = function module() {
     // and assign the values from that country to that line.
 
     lines_g.selectAll("path.line.imports")
-        .data(function(d) { return [d.values]; })
+        .data(function(d) { return [d]; }, function(d) { return d.name; })
         .enter().append("path")
           .attr('class', 'line imports');
 
     lines_g.selectAll('path.line.imports')
-        .data(function(d) { return [d.values]; })
+        .data(function(d) { return [d]; }, function(d) { return d.name; })
         .transition()
-        .attr("d", function(d) { return imports_line(d); });
+        .attr("d", function(d) { return imports_line(d.values); });
 
     lines_g.selectAll("path.line.exports")
-        .data(function(d) { return [d.values]; })
+        .data(function(d) { return [d]; }, function(d) { return d.name; })
         .enter().append("path")
           .attr('class', 'line exports');
 
     lines_g.selectAll('path.line.exports')
-        .data(function(d) { return [d.values]; })
+        .data(function(d) { return [d]; }, function(d) { return d.name; })
         .transition()
-        .attr("d", function(d) { return exports_line(d); });
-
+        .attr("d", function(d) { return exports_line(d.values); });
   };
 
   // Add country name labels to right-hand end of lines.
   function renderLineLabels(lines_g) {
     lines_g.selectAll('text.label')
-            .data(function(d) { return [d]; })
+            .data(function(d) { return [d]; }, function(d) { return d.name; })
             .enter().append('text')
               .attr('class', 'label')
               .attr('x', 7)
@@ -350,7 +350,7 @@ impexp.chart = function module() {
               });
 
     lines_g.selectAll('text.label')
-            .data(function(d) { return [d]; })
+            .data(function(d) { return [d]; }, function(d) { return d.name; })
             .transition()
             .text(function(d) { return d.name; })
             .attr('transform',function(d) {
@@ -363,7 +363,7 @@ impexp.chart = function module() {
                 return 'translate(' + xScale(x_val) +','+ yScale(y_val) + ')';
             })
             // After movement has finished, check there's no overlap.
-            .each('end', function(){arrangeLineLabels(lines_g);});
+            .each('end', function(){ arrangeLineLabels(lines_g); });
 
   };
 
@@ -417,49 +417,87 @@ impexp.chart = function module() {
 
     // This did select 'clipPath.clip.surplus' but this results in creating
     // NEW clippaths with every transition. No idea.
-    lines_g.selectAll('#clip-surplus')
-      .data(function(d) { return [d.values]; })
-      .enter().append('clipPath')
-        .attr('id', 'clip-surplus')
+    //lines_g.selectAll('#clip-surplus')
+      //.data(function(d) { return [d]; }, function(d) { return d.name; })
+      //.enter().append('clipPath')
+        //.attr('id', 'clip-surplus')
+        //.append('path')
+          //.attr('class', 'clip surplus');
+    //lines_g.selectAll('path.clip.surplus')
+      //.data(function(d) { return [d]; }, function(d) { return d.name; })
+      //.transition()
+      //.attr('d', area.y0(0));
+
+
+    
+    // This did select 'clipPath.clip.deficit' but this results in creating
+    // NEW clippaths with every transition. No idea.
+
+    var area3 = d3.svg.area()
+                        .x(X)
+                        .y1(YImports)
+                        .y0(function(d){ return yScale(d.exports); });
+
+    lines_g.selectAll('.clippath.surplus')
+      .data(function(d) { return [d]; }, function(d) { return d.name; })
+      .enter()
+        .append('clipPath')
+        .attr('id', function(d) { return "surplusclip" + d.name.replace(/[^a-zA-Z]/g,''); })
+        .attr('class', 'clippath surplus')
         .append('path')
           .attr('class', 'clip surplus');
     lines_g.selectAll('path.clip.surplus')
-      .data(function(d) { return [d.values]; })
+      .data(function(d) { return [d]; }, function(d) { return d.name; })
       .transition()
-      .attr('d', area.y0(0));
+      .attr('d', function(d){ return area3(d.values); }); 
 
-    // This did select 'clipPath.clip.deficit' but this results in creating
-    // NEW clippaths with every transition. No idea.
-    lines_g.selectAll('#clip-deficit')
-      .data(function(d) { return [d.values]; })
-      .enter().append('clipPath')
-        .attr('id', 'clip-deficit')
+    // Draw the shaded areas, using the clipPaths.
+    var area2 = d3.svg.area()
+                        .x(X)
+                        .y1(YExports)
+                        .y0(function(d){ return yScale(0); });
+
+    lines_g.selectAll('path.area.surplus')
+      .data(function(d) { return [d]; }, function(d) { return d.name; })
+      .enter().append('path')
+        .attr('class', 'area surplus')
+        .attr('clip-path', function(d) { return "url(#surplusclip" + d.name.replace(/[^a-zA-Z]/g,'') + ")"; });
+    lines_g.selectAll('path.area.surplus')
+      .transition()
+      .attr('d', function(d){ return area2(d.values); });
+        
+
+    var area5 = d3.svg.area()
+                        .x(X)
+                        .y1(YExports)
+                        .y0(function(d){ return yScale(d.imports); });
+
+    lines_g.selectAll('.clippath.deficit')
+      .data(function(d) { return [d]; }, function(d) { return d.name; })
+      .enter()
+        .append('clipPath')
+        .attr('id', function(d) { return "deficitclip" + d.name.replace(/[^a-zA-Z]/g,''); })
+        .attr('class', 'clippath deficit')
         .append('path')
           .attr('class', 'clip deficit');
     lines_g.selectAll('path.clip.deficit')
-      .data(function(d) { return [d.values]; })
+      .data(function(d) { return [d]; }, function(d) { return d.name; })
       .transition()
-      .attr('d', area.y0(inner_height));
+      .attr('d', function(d){ return area5(d.values); }); 
 
-    // Draw the shaded areas, using the clipPaths.
+    var area4 = d3.svg.area()
+                        .x(X)
+                        .y1(YImports)
+                        .y0(function(d){ return yScale(0); });
 
-    lines_g.selectAll('path.area.surplus')
-      .data(function(d) { return [d.values]; })
-      .enter().append('path')
-        .attr('class', 'area surplus')
-        .attr('clip-path', 'url(#clip-surplus)');
-    lines_g.selectAll('path.area.surplus')
-      .transition()
-      .attr('d', area.y0(function(d) { return yScale(d.exports); }));
-        
     lines_g.selectAll('path.area.deficit')
-      .data(function(d) { return [d.values]; })
+      .data(function(d) { return [d]; }, function(d) { return d.name; })
       .enter().append('path')
         .attr('class', 'area deficit')
-        .attr('clip-path', 'url(#clip-deficit)')
+        .attr('clip-path', function(d) { return "url(#deficitclip" + d.name.replace(/[^a-zA-Z]/g,'') + ")"; });
     lines_g.selectAll('path.area.deficit')
       .transition()
-      .attr('d', area);
+      .attr('d', function(d) { return area4(d.values); });
   };
 
   // The x-accessor for the path generator; xScale âˆ˜ xValue.
