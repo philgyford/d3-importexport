@@ -184,11 +184,7 @@ impexp.chart = function module() {
       imports_line = d3.svg.line().x(X).y(YImports)
                         .defined(function(d){ return d.imports !== null; }),
       exports_line = d3.svg.line().x(X).y(YExports)
-                        .defined(function(d){ return d.exports !== null; }),
-      // defined() ensures we draw the area only when both lines have data.
-      area = d3.svg.area().x(X).y1(YImports)
-                        .defined(function(d){
-                          return d.imports !== null && d.exports !== null; });
+                        .defined(function(d){ return d.exports !== null; });
 
   var dispatch = d3.dispatch('customHover');
 
@@ -410,94 +406,97 @@ impexp.chart = function module() {
   
   };
 
-  // The shaded areas between pairs of lines.
+  /**
+   * The shaded areas between pairs of lines.
+   *
+   * This is more complicated than I expected.
+   * We draw two areas for each country:
+   * 1) surplus (below the exports line, green). 
+   * 2) deficit (below the imports line, red).
+   *
+   * Each of those has a clipPath associated with it that is like a "window"
+   * between the pair of lines for this country.
+   * The surplus clipPath has the imports line at its top edge, exports below.
+   * The deficit clipPath has the exports line at its top edge, imports below.
+   */
   function renderAreas(lines_g) {
 
-    // Make clipPaths for the shaded areas.
+    // eg, turn 'Korea, Rep.' into 'korearep'.
+    var nameToClass = function(name) {
+      return name.replace(/[^a-zA-Z]/g, '').toLowerCase();
+    };
 
-    // This did select 'clipPath.clip.surplus' but this results in creating
-    // NEW clippaths with every transition. No idea.
-    //lines_g.selectAll('#clip-surplus')
-      //.data(function(d) { return [d]; }, function(d) { return d.name; })
-      //.enter().append('clipPath')
-        //.attr('id', 'clip-surplus')
-        //.append('path')
-          //.attr('class', 'clip surplus');
-    //lines_g.selectAll('path.clip.surplus')
-      //.data(function(d) { return [d]; }, function(d) { return d.name; })
-      //.transition()
-      //.attr('d', area.y0(0));
+    // The base area object that we vary for each type we subsequently need.
+    var area = d3.svg.area().x(X);
 
+    // Area for the surplus clippath.
+    var area_clip_surplus = area.y1(YImports)
+                                .y0(function(d){ return yScale(d.exports); });
 
-    
-    // This did select 'clipPath.clip.deficit' but this results in creating
-    // NEW clippaths with every transition. No idea.
-
-    var area3 = d3.svg.area()
-                        .x(X)
-                        .y1(YImports)
-                        .y0(function(d){ return yScale(d.exports); });
-
+    // Can't select clippath or clipPath by element name due to a WebKit bug.
+    // So have to use classes or IDs.
     lines_g.selectAll('.clippath.surplus')
+      // Give the clipPath a unique name, eg 'United States'.
       .data(function(d) { return [d]; }, function(d) { return d.name; })
-      .enter()
-        .append('clipPath')
-        .attr('id', function(d) { return "surplusclip" + d.name.replace(/[^a-zA-Z]/g,''); })
+      .enter().append('clipPath')
+        // Each one must also have a unique ID:
+        .attr('id', function(d) { return 'clip-surplus-' + nameToClass(d.name); })
         .attr('class', 'clippath surplus')
         .append('path')
+          // The path, within the clipPath is the window between the lines.
           .attr('class', 'clip surplus');
     lines_g.selectAll('path.clip.surplus')
       .data(function(d) { return [d]; }, function(d) { return d.name; })
       .transition()
-      .attr('d', function(d){ return area3(d.values); }); 
+      // area_clip_surplus will describe the area between the lines.
+      .attr('d', function(d){ return area_clip_surplus(d.values); }); 
 
-    // Draw the shaded areas, using the clipPaths.
-    var area2 = d3.svg.area()
-                        .x(X)
-                        .y1(YExports)
-                        .y0(function(d){ return yScale(0); });
+
+    // Area for the surplus shaded-in part that uses the clip path above.
+    var area_surplus = area.y1(YExports).y0(function(d){ return yScale(0); });
 
     lines_g.selectAll('path.area.surplus')
       .data(function(d) { return [d]; }, function(d) { return d.name; })
       .enter().append('path')
         .attr('class', 'area surplus')
-        .attr('clip-path', function(d) { return "url(#surplusclip" + d.name.replace(/[^a-zA-Z]/g,'') + ")"; });
+        // Link this area to the clipPath we defined above, by ID.
+        .attr('clip-path', function(d) {
+                    return 'url(#clip-surplus-' + nameToClass(d.name) + ')'; });
     lines_g.selectAll('path.area.surplus')
       .transition()
-      .attr('d', function(d){ return area2(d.values); });
+      // area_surplus describes the area below the exports line.
+      .attr('d', function(d){ return area_surplus(d.values); });
         
 
-    var area5 = d3.svg.area()
-                        .x(X)
-                        .y1(YExports)
-                        .y0(function(d){ return yScale(d.imports); });
+    // Area for the deficit clippath.
+    var area_clip_deficit = area.y1(YExports)
+                                 .y0(function(d){ return yScale(d.imports); });
 
     lines_g.selectAll('.clippath.deficit')
       .data(function(d) { return [d]; }, function(d) { return d.name; })
-      .enter()
-        .append('clipPath')
-        .attr('id', function(d) { return "deficitclip" + d.name.replace(/[^a-zA-Z]/g,''); })
+      .enter().append('clipPath')
+        .attr('id', function(d) { return 'clip-deficit-' + nameToClass(d.name); })
         .attr('class', 'clippath deficit')
         .append('path')
           .attr('class', 'clip deficit');
     lines_g.selectAll('path.clip.deficit')
       .data(function(d) { return [d]; }, function(d) { return d.name; })
       .transition()
-      .attr('d', function(d){ return area5(d.values); }); 
+      .attr('d', function(d){ return area_clip_deficit(d.values); }); 
 
-    var area4 = d3.svg.area()
-                        .x(X)
-                        .y1(YImports)
-                        .y0(function(d){ return yScale(0); });
+
+    // Area for the deficit shaded-in part that uses the clip path above.
+    var area_deficit = area.y1(YImports).y0(function(d){ return yScale(0); });
 
     lines_g.selectAll('path.area.deficit')
       .data(function(d) { return [d]; }, function(d) { return d.name; })
       .enter().append('path')
         .attr('class', 'area deficit')
-        .attr('clip-path', function(d) { return "url(#deficitclip" + d.name.replace(/[^a-zA-Z]/g,'') + ")"; });
+        .attr('clip-path',function(d) {
+                    return 'url(#clip-deficit-' + nameToClass(d.name) + ')'; });
     lines_g.selectAll('path.area.deficit')
       .transition()
-      .attr('d', function(d) { return area4(d.values); });
+      .attr('d', function(d) { return area_deficit(d.values); });
   };
 
   // The x-accessor for the path generator; xScale âˆ˜ xValue.
