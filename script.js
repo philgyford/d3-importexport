@@ -1,3 +1,5 @@
+ll = function(s) { console.log(s); };
+
 var impexp = {};
 
 impexp.dataManager = function module() {
@@ -165,6 +167,7 @@ impexp.chart = function module() {
       inner_height = height - margin.top - margin.bottom,
       svg,
       main_g,
+      tooltip,
       xValue = function(d) { return d[0]; },
       yValue = function(d) { return d[1]; },
       xScale = d3.time.scale(),
@@ -186,11 +189,15 @@ impexp.chart = function module() {
       exports_line = d3.svg.line().x(X).y(YExports)
                         .defined(function(d){ return d.exports !== null; });
 
-  var dispatch = d3.dispatch('customHover');
+  //var dispatch = d3.dispatch('customHover');
 
   function exports(_selection) {
     _selection.each(function(data) {
       
+      if (! tooltip) {
+        tooltip = d3.select('body').append('div').attr('class', 'tooltip');
+      };
+
       // Select svg element if it exists.
       svg = d3.select(this)
                 .selectAll('svg')
@@ -226,6 +233,7 @@ impexp.chart = function module() {
     // Update outer and inner dimensions.
     svg.transition().attr({ width: width, height: height });
     main_g.attr('transform', 'translate(' + margin.left +','+ margin.top + ')');
+
   };
   
   function updateScales(data) {
@@ -296,6 +304,8 @@ impexp.chart = function module() {
 
     renderLines(lines_g);
 
+    renderLineTooltips(lines_g);
+
     renderLineLabels(lines_g);
 
     renderAreas(lines_g);
@@ -326,6 +336,48 @@ impexp.chart = function module() {
         .data(function(d) { return [d]; }, function(d) { return d.name; })
         .transition()
         .attr("d", function(d) { return exports_line(d.values); });
+  };
+  
+  // Draw an invisible circle at each point on each line, and display a tooltip
+  // if the mouse hovers over it.
+  function renderLineTooltips(lines_g) {
+
+    var displayToolTip = function (d) {
+      tooltip.html(d.year + '<br>Imports: ' + d.imports + '<br>Exports: ' + d.exports)
+             .style('left', (d3.event.pageX + 5) + 'px')
+             .style('top', (d3.event.pageY + 5) + 'px');
+      tooltip.transition().style('opacity', 1);
+    };
+
+    var removeToolTip = function () {
+      tooltip.transition().style('opacity', 0);
+    };
+
+
+    // For each of the sets of data, draw the dots for each country...
+    ['imports', 'exports'].forEach(function(type) {
+
+      lines_g.selectAll('circle.'+type)
+            .data(function(d) { return d.values; },
+                  function(d, i) { return 'p'+type+i; })
+            .enter().append('circle')
+              .attr('class', type)
+              // If there's no data for this point, give it 0 radius.
+              .attr('r', function(d) { return d[type] == null ? 0 : 8; })
+              .on('mouseover', function(d, i) {
+                displayToolTip(d);
+              })
+              .on('mouseout', function(d) {
+                removeToolTip();
+              });
+
+      lines_g.selectAll('circle.'+type)
+            .data(function(d) { return d.values; },
+                  function(d, i) { return 'p'+type+i; })
+            .transition()
+            .attr('cx', function(d) { return xScale(d.year); })
+            .attr('cy', function(d) { return yScale(d[type]); });
+    });
   };
 
   // Add country name labels to right-hand end of lines.
@@ -408,7 +460,6 @@ impexp.chart = function module() {
             });
         });
     };
-  
   };
 
   /**
@@ -547,7 +598,7 @@ impexp.chart = function module() {
     return chart;
   };
   
-  d3.rebind(exports, dispatch, "on");
+  //d3.rebind(exports, dispatch, "on");
 
   return exports;
 };
