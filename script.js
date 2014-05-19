@@ -483,7 +483,10 @@ impexp.chart = function module() {
     };
 
     // The base area object that we vary for each type we subsequently need.
-    var area = d3.svg.area().x(X);
+    var area = d3.svg.area()
+                      .x(X)
+                      .defined(function(d){
+                          return d.exports !== null && d.imports !== null; });
 
     // Area for the surplus clippath.
     var area_clip_surplus = area.y1(YImports)
