@@ -382,11 +382,16 @@ impexp.chart = function module() {
               var label_b = this;
               if (label_b != label_a) {
                 var b = label_b.getBoundingClientRect();
-                if((Math.abs(a.left - b.left) * 2 < (a.width + b.width)) &&
+                if(
+                  // We don't want to move them left/right:
+                  //(Math.abs(a.left - b.left) * 2 < (a.width + b.width)) &&
                    (Math.abs(a.top - b.top) * 2 < (a.height + b.height))) {
                   // The labels are overlapping.
-                  var dx = (Math.max(0, a.right - b.left) +
-                           Math.min(0, a.left - b.right)) * 0.01,
+
+                  // We don't want to move them left/right:
+                  //var dx = (Math.max(0, a.right - b.left) +
+                           //Math.min(0, a.left - b.right)) * 0.01,
+                  var dx = 0,
                       dy = (Math.max(0, a.bottom - b.top) +
                            Math.min(0, a.top - b.bottom)) * 0.02,
                       tt = d3.transform(d3.select(label_b).attr("transform")),
