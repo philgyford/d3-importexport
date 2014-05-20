@@ -172,17 +172,17 @@ impexp.chart = function module() {
       yValue = function(d) { return d[1]; },
       xScale = d3.time.scale(),
       yScale = d3.scale.linear(),
+      yearFormat = d3.time.format('%Y'),
+      moneyFormat = function(d) { return d3.format(',f')(+d / 1000000000); },
       xAxis = d3.svg.axis()
                   .scale(xScale)
                   .orient('bottom')
-                  .tickFormat(d3.time.format('%Y'))
+                  .tickFormat(yearFormat)
                   .ticks(d3.time.years, 5),
       yAxis = d3.svg.axis()
                   .scale(yScale)
                   .orient('left')
-                  .tickFormat(function(d){
-                    return d3.format(',')(d / 1000000000)
-                  }),
+                  .tickFormat(moneyFormat),
       // defined() ensures we only draw the lines where there is data.
       imports_line = d3.svg.line().x(X).y(YImports)
                         .defined(function(d){ return d.imports !== null; }),
@@ -304,11 +304,11 @@ impexp.chart = function module() {
 
     renderLines(lines_g);
 
+    renderAreas(lines_g);
+
     renderLineTooltips(lines_g);
 
     renderLineLabels(lines_g);
-
-    renderAreas(lines_g);
   };
 
   // The pairs of import/export lines for each country.
@@ -342,15 +342,18 @@ impexp.chart = function module() {
   // if the mouse hovers over it.
   function renderLineTooltips(lines_g) {
 
-    var displayToolTip = function (d) {
-      tooltip.html(d.year + '<br>Imports: ' + d.imports + '<br>Exports: ' + d.exports)
-             .style('left', (d3.event.pageX + 5) + 'px')
+    var displayToolTip = function (d, name) {
+      tooltip.html(name
+                    + '<br>' + yearFormat(d.year)
+                    + '<br><span class="imports">Imports: $' + moneyFormat(d.imports) + ' billion</span>'
+                    + '<br><span class="exports">Exports: $' + moneyFormat(d.exports) + ' billion</span>')
+             .style('left', (d3.event.pageX + 10) + 'px')
              .style('top', (d3.event.pageY + 5) + 'px');
-      tooltip.transition().style('opacity', 1);
+      tooltip.style('opacity', 1);
     };
 
     var removeToolTip = function () {
-      tooltip.transition().style('opacity', 0);
+      tooltip.style('opacity', 0);
     };
 
 
@@ -365,7 +368,9 @@ impexp.chart = function module() {
               // If there's no data for this point, give it 0 radius.
               .attr('r', function(d) { return d[type] == null ? 0 : 8; })
               .on('mouseover', function(d, i) {
-                displayToolTip(d);
+                // Pass the point's data and the name of the parent lines_g
+                // (ie, the country name).
+                displayToolTip(d, d3.select(this.parentNode).datum().name);
               })
               .on('mouseout', function(d) {
                 removeToolTip();
