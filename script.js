@@ -403,8 +403,11 @@ impexp.chart = function module() {
             .text(function(d) { return d.name; })
             .attr('transform',function(d) {
                 // Get the final set of data (year, imports, exports) for this
-                // line/country:
-                var values = d.values[d.values.length - 1];
+                // line/country (but only where we have data for a year).
+                var d_values = d.values.filter(function(year){
+                      return year.imports !== null && year.exports !== null;
+                    });
+                var values = d_values[d_values.length - 1];
                 // Position label between final import and export values.
                 var y_val = (values.imports + values.exports) / 2;
                 var x_val = values.year;
