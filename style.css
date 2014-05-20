@@ -40,7 +40,7 @@ h1 {
 	color: #900;
 }
 .exports {
-	color: #090;
+	color: #060;
 }
 #countries li {
   list-style-type: none;
@@ -76,7 +76,7 @@ h1 {
     stroke: #c63;
   }
   .line.exports {
-    stroke: #393;
+    stroke: #060;
   }
 
 .lines .area {
@@ -86,7 +86,7 @@ h1 {
     fill: #f63;
   }
   .area.surplus {
-    fill: #6c3;
+    fill: #390;
   }
 .label {
   font-size: 13px;
