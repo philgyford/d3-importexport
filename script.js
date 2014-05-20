@@ -410,7 +410,9 @@ impexp.chart = function module() {
                 var values = d_values[d_values.length - 1];
                 // Position label between final import and export values.
                 var y_val = (values.imports + values.exports) / 2;
-                var x_val = values.year;
+                // But we want the label to be positioned as if this country
+                // had data for the maximum year.
+                var x_val = d.values[d.values.length - 1].year;
                 return 'translate(' + xScale(x_val) +','+ yScale(y_val) + ')';
             })
             // After movement has finished, check there's no overlap.
