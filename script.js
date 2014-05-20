@@ -1,4 +1,3 @@
-ll = function(s) { console.log(s); };
 
 var impexp = {};
 
@@ -35,6 +34,7 @@ impexp.dataManager = function module() {
 
   return exports;
 };
+
 
 /**
  * For combining our sets of import and export data into one data structure.
@@ -159,6 +159,7 @@ impexp.dataCombiner = function module() {
   return exports;
 };
 
+
 impexp.chart = function module() {
   var margin = {top: 10, right: 120, bottom: 20, left: 60},
       width = 800,
@@ -190,6 +191,7 @@ impexp.chart = function module() {
                         .defined(function(d){ return d.exports !== null; });
 
   //var dispatch = d3.dispatch('customHover');
+  
 
   function exports(_selection) {
     _selection.each(function(data) {
@@ -213,7 +215,10 @@ impexp.chart = function module() {
     });
   };
 
-  // We'll make a structure like: svg > g > g.lines > path.line.imports
+
+  /**
+   * We'll make a structure like: svg > g > g.lines > path.line.imports
+   */
   function createMain() {
     // Create skeletal chart, with no data applied.
     main_g = svg.enter()
@@ -233,8 +238,8 @@ impexp.chart = function module() {
     // Update outer and inner dimensions.
     svg.transition().attr({ width: width, height: height });
     main_g.attr('transform', 'translate(' + margin.left +','+ margin.top + ')');
-
   };
+
   
   function updateScales(data) {
     inner_width = width - margin.left - margin.right;
@@ -261,10 +266,12 @@ impexp.chart = function module() {
     ]).range([inner_height, 0]);
   };
 
+
   function renderAxes() {
     renderXAxis(axes_g);
     renderYAxis(axes_g);
   };
+
 
   function renderXAxis(axes_g) {
     axes_g.append('g')
@@ -275,6 +282,7 @@ impexp.chart = function module() {
             .call(xAxis);
   };
 
+
   function renderYAxis(axes_g) {
     axes_g.append('g')
             .attr('class', 'y axis')
@@ -284,11 +292,12 @@ impexp.chart = function module() {
               .attr("x", 0 - (inner_height / 2))
               .attr("dy", "1em")
               .style("text-anchor", "middle")
-              .text("US$ Billion");;
+              .text("US$ billion");;
 
     main_g.select('.y.axis')
             .call(yAxis);
   };
+
 
   function renderBody() {
     // Create lines group and assign the data for each country to each group.
@@ -311,7 +320,10 @@ impexp.chart = function module() {
     renderLineLabels(lines_g);
   };
 
-  // The pairs of import/export lines for each country.
+
+  /**
+   * The pairs of import/export lines for each country.
+   */
   function renderLines(lines_g) {
 
     // Create each of the two lines within each lines group,
@@ -338,8 +350,11 @@ impexp.chart = function module() {
         .attr("d", function(d) { return exports_line(d.values); });
   };
   
-  // Draw an invisible circle at each point on each line, and display a tooltip
-  // if the mouse hovers over it.
+
+  /**
+   * Draw an invisible circle at each point on each line, and display a tooltip
+   * if the mouse hovers over it.
+   */
   function renderLineTooltips(lines_g) {
 
     var displayToolTip = function (d, name) {
@@ -357,7 +372,7 @@ impexp.chart = function module() {
     };
 
 
-    // For each of the sets of data, draw the dots for each country...
+    // For each of the sets of data, draw the dots for each country.
     ['imports', 'exports'].forEach(function(type) {
 
       lines_g.selectAll('circle.'+type)
@@ -385,7 +400,10 @@ impexp.chart = function module() {
     });
   };
 
-  // Add country name labels to right-hand end of lines.
+
+  /**
+   * Add country name labels to right-hand end of lines.
+   */
   function renderLineLabels(lines_g) {
     lines_g.selectAll('text.label')
             .data(function(d) { return [d]; }, function(d) { return d.name; })
@@ -425,7 +443,10 @@ impexp.chart = function module() {
 
   };
 
-  // If line labels are overlapping, move them until they're not.
+
+  /**
+   * If line labels are overlapping, move them until they're not.
+   */
   function arrangeLineLabels(lines_g) {
 
     // Based on http://stackoverflow.com/a/23373686/250962
@@ -471,6 +492,7 @@ impexp.chart = function module() {
         });
     };
   };
+
 
   /**
    * The shaded areas between pairs of lines.
@@ -567,6 +589,7 @@ impexp.chart = function module() {
       .transition()
       .attr('d', function(d) { return area_deficit(d.values); });
   };
+
 
   // The x-accessor for the path generator; xScale âˆ˜ xValue.
   function X(d) {
