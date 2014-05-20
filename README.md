@@ -1,9 +1,7 @@
+# D3.js difference graph showing imports and exports for multiple countries
 
-Imports and Exports of goods and services (current US$)
+Inspired by William Playfair's 18th century charts ([for example](https://en.wikipedia.org/wiki/File:Playfair_TimeSeries-2.png)).
 
-
-## Todo
-
-* Hover over points.
+See a working version at http://www.gyford.com/phil/misc/d3/importexport/
 
 
