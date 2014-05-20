@@ -486,7 +486,7 @@ impexp.chart = function module() {
     var area = d3.svg.area()
                       .x(X)
                       .defined(function(d){
-                          return d.exports !== null && d.imports !== null; });
+                          return d.imports !== null && d.exports !== null; });
 
     // Area for the surplus clippath.
     var area_clip_surplus = area.y1(YImports)
